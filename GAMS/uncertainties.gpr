@@ -1,0 +1,14 @@
+[PROJECT]
+
+[RP:2NODES]
+1=
+
+[OPENWINDOW_1]
+FILE0=C:\Users\ba62very\MyGit\risk-aversion\GAMS\2Nodes.gms
+FILE1=C:\Users\ba62very\MyGit\risk-aversion\GAMS\2Nodes.lst
+FILE2=C:\Users\ba62very\MyGit\risk-aversion\GAMS\2Nodes.lst
+MAXIM=0
+TOP=50
+LEFT=50
+HEIGHT=400
+WIDTH=400
