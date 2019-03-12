@@ -62,10 +62,6 @@
 *  avgLineUtilization(S)  "average utilization of transmission capacity in scenario s"
 *  avgBuUtilization(S,B)  "average utilization of backup b in scenario s"
 
-*risk aversion
-weight_spot              "weight assigned to the worst-case spot market outcome for risk averse market participants"
-weight_redi              "weight assigned to the worst-case redispacth outcome for risk averse market participants"
-percentile               "lower percentile of welfare function that is considered to be the worst case"
 
   Loop_Probability_results(Loop_Probability,S);
 

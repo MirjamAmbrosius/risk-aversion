@@ -30,9 +30,9 @@ option  optcr = 0.0001
 $set resIntegration off
 
 Sets
-         L "indices for power lines"     / 1 * 70 /
-         LineInvest                      / 1 * 70 /
-         Loop_Probability                / 1 * 11 /
+         L "indices for power lines"     / 1 * 3 /
+         LineInvest                      / 1 * 3 /
+         Loop_Probability                / 1 * 2 /
          results                         / "CS", "PS", "CR", "ALL"
                                            "RD_G", "RD_B","RD_L", "SP_G", "SP_P"
                                            "C_L", "C_B" , "C_G",
@@ -44,7 +44,7 @@ Sets
 
 $include Input_2Nodes.gms
 $include Parameters_2Nodes.gms
-$include Modell_2Nodes.gms
+$include model-risk-aversion.gms
 
 *** read gurobi.opt
 *  Spotmarket.OptFile = 1 ;
@@ -153,7 +153,6 @@ $offtext
 *                                         + sum((D,T), DSM * ls_rd(S,D,T) * periodScale(T) ) * YEAR )
                                            + sum(B, buFixInv * ib_rd.l(B) )
                                            + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) ;
-
 
 
 Display test;
@@ -320,6 +319,7 @@ $offtext
 
   Loop_profits_PS(Loop_Probability,LineInvest,G,S)$sum(T, SP_GEN_G(S,G,T)) = Loop_rents_PS(Loop_Probability,LineInvest,G,S) / ( sum(T, SP_GEN_G(S,G,T) * periodScale(T) ) * YEAR ) ;
 
+
 ***--------------------------------------------------------------------------***
 ***                     CLEAR PARAMETERs OF MODEL RUN                        ***
 ***--------------------------------------------------------------------------***
@@ -368,6 +368,7 @@ $offtext
 ***--------------------------------------------------------------------------***
 ***                            END OF MODEL LOOP                             ***
 ***--------------------------------------------------------------------------***
+
 
 ***--------------------------------------------------------------------------***
 ***                 OUTPUT WITH RESULTS FOR BEST LINE INVEST                 ***
@@ -492,4 +493,4 @@ $ontext
   Results_results_price_A(Loop_Probability,S,results)   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_results_price_A(Loop_Probability,LineInvest,S,results) )     ;
 $offtext
 
-$include OutputWriter.gms
+*$include OutputWriter.gms

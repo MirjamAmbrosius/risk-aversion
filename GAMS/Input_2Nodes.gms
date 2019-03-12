@@ -52,6 +52,11 @@
   periodScale(T)  "occurence of scenarios"
   dRef(T)         "reference demand per season"
   pRef(T)         "reference price"
+
+*** Risk Aversion Parameters ***
+  weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants"   /1/
+  weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants"    /1/
+  percentile      "lower percentile of welfare function that is considered to be the worst case"                /0.2/
   ;
 
   lineIsNew(L)     = 1 ;
