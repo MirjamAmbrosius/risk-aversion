@@ -32,7 +32,7 @@ $set resIntegration off
 Sets
          L "indices for power lines"     / 1 * 3 /
          LineInvest                      / 1 * 3 /
-         Loop_Probability                / 1 * 2 /
+         Loop_Probability                / 1 * 5 /
          results                         / "CS", "PS", "CR", "ALL"
                                            "RD_G", "RD_B","RD_L", "SP_G", "SP_P"
                                            "C_L", "C_B" , "C_G",
@@ -96,6 +96,7 @@ $endif
   option clear= f_sp        ;
 
   SOLVE Spotmarket USING QCP MAXIMIZE welfareSpot ;
+
 
   SP_DEM(S,D,T)   = d_sp.l(S,D,T)          ;
   SP_GEN_G(S,G,T) = g_sp.l(S,G,T)          ;

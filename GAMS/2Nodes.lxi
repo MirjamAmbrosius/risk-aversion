@@ -1,13 +1,92 @@
 B 2 C o m p i l a t i o n
-B 931 Include File Summary
-B 953 Model Statistics    SOLVE Spotmarket Using QCP From line 553
-B 978 Solution Report     SOLVE Spotmarket Using QCP From line 553
-B 1007 Model Statistics    SOLVE Redispatch Using LP From line 597
-B 1030 Solution Report     SOLVE Redispatch Using LP From line 597
-B 1058 E x e c u t i o n
-I 1061 Test
-I 1076 Test
-I 1082 Test
-I 1088 Test
-I 1094 Test
-I 1100 Test
+B 942 Include File Summary
+B 964 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 989 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1018 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1041 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1067 E x e c u t i o n
+I 1070 Test
+B 1073 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1098 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1130 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1153 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1182 E x e c u t i o n
+I 1185 Test
+B 1188 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1213 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1245 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1268 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1297 E x e c u t i o n
+I 1300 Test
+B 1303 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1328 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1360 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1383 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1413 E x e c u t i o n
+I 1416 Test
+B 1419 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1444 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1476 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1499 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1529 E x e c u t i o n
+I 1532 Test
+B 1535 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1560 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1592 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1615 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1644 E x e c u t i o n
+I 1647 Test
+B 1650 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1675 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1707 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1730 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1760 E x e c u t i o n
+I 1763 Test
+B 1766 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1791 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1823 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1846 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1876 E x e c u t i o n
+I 1879 Test
+B 1882 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 1907 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 1939 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 1962 Solution Report     SOLVE Redispatch Using LP From line 608
+B 1991 E x e c u t i o n
+I 1994 Test
+B 1997 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2022 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2054 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2077 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2107 E x e c u t i o n
+I 2110 Test
+B 2113 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2138 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2170 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2193 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2223 E x e c u t i o n
+I 2226 Test
+B 2229 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2254 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2286 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2309 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2339 E x e c u t i o n
+I 2342 Test
+B 2345 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2370 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2402 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2425 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2455 E x e c u t i o n
+I 2458 Test
+B 2461 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2486 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2518 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2541 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2571 E x e c u t i o n
+I 2574 Test
+B 2577 Model Statistics    SOLVE Spotmarket Using QCP From line 563
+B 2602 Solution Report     SOLVE Spotmarket Using QCP From line 563
+B 2634 Model Statistics    SOLVE Redispatch Using LP From line 608
+B 2657 Solution Report     SOLVE Redispatch Using LP From line 608
+B 2687 E x e c u t i o n
+I 2690 Test

@@ -54,8 +54,8 @@
   pRef(T)         "reference price"
 
 *** Risk Aversion Parameters ***
-  weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants"   /1/
-  weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants"    /1/
+  weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"   /0.5/
+  weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"    /0.5/
   percentile      "lower percentile of welfare function that is considered to be the worst case"                /0.2/
   ;
 

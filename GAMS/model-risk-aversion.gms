@@ -9,11 +9,12 @@
 
 * Spot Market
   f_sp(S,L,T)            "trade flow in spot market"
-  zeta_sp                "other auxiliary variable to model CVAR in spot market stage"
+  VAR_sp                "value at risk spot market"
 * Redispatch
   f_rd(S,L,T)            "transmission flows redispatch"
   angle(S,N,T)           "phase angle in redispatch model"
-  zeta_rd                "other auxiliary variable to model CVAR in redispatch stage"
+  VAR_rd                "value at risk redispatch"
+  CVAR                   "conditional value at risk"
   ;
 
   Positive Variables
@@ -52,15 +53,15 @@
                                       - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
                                       - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) ) ) * Year
                                       - sum(G, genFixInv(G) * ig_sp(G) )
-                                      + weight_sp*(zeta_sp - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_sp(S)))) ;
+                                      + weight_sp*(VAR_sp - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_sp(S)))) ;
 
 *** Conditional Value at Risk Restrictions ***
   Equation CVARSpot;
   CVARSpot(S)$probability(S)..
-        zeta_sp - ( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
+        VAR_sp - (( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
                 - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
                 - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) )  * Year
-                - sum(G, genFixInv(G) * ig_sp(G)) =l=eta_sp(S)
+                - sum(G, genFixInv(G) * ig_sp(G))) =l=eta_sp(S)
 
 *** Zonal First Kirchhoffs Law
 
@@ -94,21 +95,26 @@
 ***--------------------------------------------------------------------------***
 
   Equation costRed ;
-  costRed..         costRedispatch =e= (1-weight_rd)*sum(S$probability(S), probability(S)
+  costRed..         costRedispatch =e= (1-weight_rd)*(sum(S$probability(S), probability(S)
                                          * ( sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
-                                           + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR ) )
+                                           + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR )))
                                            + sum(B, buFixInv * ib_rd(B) )
                                            + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L))
-                                           + weight_rd*(zeta_rd - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_rd(S))));
-*TODO: Check integration of CVAR when objective function is minimized!
+                                           + weight_rd*CVAR
+                                           ;
 
 *** Conditional Value at Risk Restrictions ***
-  Equation CVARRed;
-  CVARRed(S)$probability(S)..
-        zeta_rd - ( sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
+
+  Equation CVARRed1;
+  CVARRed1..
+         (VAR_rd + (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_rd(S)))) =l= CVAR
+  
+  Equation CVARRed2;
+  CVARRed2(S)$probability(S)..
+         (sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
                                            + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR ) 
                                            + sum(B, buFixInv * ib_rd(B) )
-                                           + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) =l=eta_rd(S)
+                                           + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) - VAR_rd =l=eta_rd(S)
 
 ***First Kirchhoffs Law
 
@@ -168,6 +174,7 @@
 
   Model Spotmarket
   / welfspot,
+    CVARSpot,
     ZFKL,
     MCF1,
     MCF2,
@@ -177,6 +184,8 @@
 
   Model Redispatch
   / costRed,
+    CVARRed1,
+    CVARRed2,
     FKL,
     SKL1,
     SKL2,

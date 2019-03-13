@@ -1,4 +1,4 @@
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 1
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 1
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 C o m p i l a t i o n
 
@@ -34,7 +34,7 @@ C o m p i l a t i o n
   32  Sets
   33           L "indices for power lines"     / 1 * 3 /
   34           LineInvest                      / 1 * 3 /
-  35           Loop_Probability                / 1 * 2 /
+  35           Loop_Probability                / 1 * 5 /
   36           results                         / "CS", "PS", "CR", "ALL"
   37                                             "RD_G", "RD_B","RD_L", "SP_G", "SP_P"
   38                                             "C_L", "C_B" , "C_G",
@@ -101,8 +101,8 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\Input_2Nodes.gms
   99    pRef(T)         "reference price"
  100   
  101  *** Risk Aversion Parameters ***
- 102    weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants"   /1/
- 103    weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants"    /1/
+ 102    weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"   /0.9/
+ 103    weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"    /0.9/
  104    percentile      "lower percentile of welfare function that is considered to be the worst case"                /0.2/
  105    ;
  106   
@@ -308,297 +308,308 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
  316   
  317  * Spot Market
  318    f_sp(S,L,T)            "trade flow in spot market"
- 319    zeta_sp                "other auxiliary variable to model CVAR in spot market stage"
+ 319    VAR_sp                "value at risk spot market"
  320  * Redispatch
  321    f_rd(S,L,T)            "transmission flows redispatch"
  322    angle(S,N,T)           "phase angle in redispatch model"
- 323    zeta_rd                "other auxiliary variable to model CVAR in redispatch stage"
- 324    ;
- 325   
- 326    Positive Variables
- 327  * Spot Market
- 328    d_sp(S,D,T)            "demand spot market"
- 329    g_sp(S,G,T)            "generation amount spot market"
- 330    ig_sp(G)               "installed capacity of generators in spot market"
- 331  * Risk Aversion
- 332    eta_sp(S)              "auxiliary variable to model CVAR in spot market stage"
- 333   
+ 323    VAR_rd                "value at risk redispatch"
+ 324    CVAR                   "conditional value at risk"
+ 325    ;
+ 326   
+ 327    Positive Variables
+ 328  * Spot Market
+ 329    d_sp(S,D,T)            "demand spot market"
+ 330    g_sp(S,G,T)            "generation amount spot market"
+ 331    ig_sp(G)               "installed capacity of generators in spot market"
+ 332  * Risk Aversion
+ 333    eta_sp(S)              "auxiliary variable to model CVAR in spot market stage"
  334   
- 335  * Redispatch
- 336    d_rd(S,D,T)            "demand redispatcht"
- 337    g_rd(S,G,T)            "generation amount redispatch"
- 338    gb_rd(S,B,T)           "generation backup capacity redispatch"
- 339    ib_rd(B)               "investment in backup capacity redispatch"
- 340    g_n_rd(S,G,T)          "negative generation redispatch"
- 341    g_p_rd(S,G,T)          "positive generation redispatch"
- 342    ls_rd(S,D,T)           "load shedding redispatch"
- 343  * Risk Aversion
- 344    eta_rd(S)              "auxiliary variable to model CVAR in redispatch stage"
- 345    ;
- 346   
- 347  *  Binary Variable
- 348  *  lineB(L)               "line is built?"
- 349  *  ;
- 350   
- 351  ***--------------------------------------------------------------------------***
- 352  ***                          SPOT MARKET MODEL                               ***
- 353  ***--------------------------------------------------------------------------***
- 354   
- 355  *** Objective function
- 356    Equation welfSpot;
- 357    welfSpot..         welfareSpot =e= (1-weight_sp)*sum(S$probability(S), probability(S)
- 358                                        * ( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
- 359                                        - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
- 360                                        - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) ) ) * Year
- 361                                        - sum(G, genFixInv(G) * ig_sp(G) )
- 362                                        + weight_sp*(zeta_sp - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_sp(S)))) ;
- 363   
- 364  *** Conditional Value at Risk Restrictions ***
- 365    Equation CVARSpot;
- 366    CVARSpot(S)$probability(S)..
- 367          zeta_sp - ( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
- 368                  - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
- 369                  - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) )  * Year
- 370                  - sum(G, genFixInv(G) * ig_sp(G)) =l=eta_sp(S)
- 371   
- 372  *** Zonal First Kirchhoffs Law
- 373   
- 374    Equation ZFKL;
- 375    ZFKL(S,Z,T)$probability(S)..
- 376   
- 377           sum(D$(consInZone(D,S) = Z.val), d_sp(S,D,T)) =e=
- 378                       sum(G$(sum(N$(genAtNode(G) = N.val), NodeInZone(N,S)) = Z.val), g_sp(S,G,T) )
- 379                     - sum(L$(sum(N$(lineStart(L) = N.val), NodeInZone(N,S)) = Z.val and lineInter(S,L) = 1), f_sp(S,L,T))
- 380                     + sum(L$(sum(N$(lineEnd(L) = N.val),   NodeInZone(N,S)) = Z.val and lineInter(S,L) = 1), f_sp(S,L,T)) ;
- 381   
- 382  *** Market Coupling Flow Restrictions
- 383   
- 384    Equation MCF1;
- 385    MCF1(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 0)..   f_sp(S,L,T) =l= lineUB(L);
- 386    Equation MCF2;
- 387    MCF2(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 0).. - lineUB(L)=l= f_sp(S,L,T);
- 388    Equation MCF3;
- 389    MCF3(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 1)..   f_sp(S,L,T) =l= lineB(L) * lineUB(L);
- 390    Equation MCF4;
- 391    MCF4(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_sp(S,L,T);
- 392   
- 393  ***Generation Capacity Limits
- 394   
- 395    Equation GCLSpot ;
- 396    GCLSpot(S,G,T)..  g_sp(S,G,T) =l= avail(T,G) * ig_sp(G) ;
- 397   
+ 335   
+ 336  * Redispatch
+ 337    d_rd(S,D,T)            "demand redispatcht"
+ 338    g_rd(S,G,T)            "generation amount redispatch"
+ 339    gb_rd(S,B,T)           "generation backup capacity redispatch"
+ 340    ib_rd(B)               "investment in backup capacity redispatch"
+ 341    g_n_rd(S,G,T)          "negative generation redispatch"
+ 342    g_p_rd(S,G,T)          "positive generation redispatch"
+ 343    ls_rd(S,D,T)           "load shedding redispatch"
+ 344  * Risk Aversion
+ 345    eta_rd(S)              "auxiliary variable to model CVAR in redispatch stage"
+ 346    ;
+ 347   
+ 348  *  Binary Variable
+ 349  *  lineB(L)               "line is built?"
+ 350  *  ;
+ 351   
+ 352  ***--------------------------------------------------------------------------***
+ 353  ***                          SPOT MARKET MODEL                               ***
+ 354  ***--------------------------------------------------------------------------***
+ 355   
+ 356  *** Objective function
+ 357    Equation welfSpot;
+ 358    welfSpot..         welfareSpot =e= (1-weight_sp)*sum(S$probability(S), probability(S)
+ 359                                        * ( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
+ 360                                        - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
+ 361                                        - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) ) ) * Year
+ 362                                        - sum(G, genFixInv(G) * ig_sp(G) )
+ 363                                        + weight_sp*(VAR_sp - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_sp(S)))) ;
+ 364   
+ 365  *** Conditional Value at Risk Restrictions ***
+ 366    Equation CVARSpot;
+ 367    CVARSpot(S)$probability(S)..
+ 368          VAR_sp - (( sum((D,T), periodScale(T)*( consObjA(D,T) * d_sp(S,D,T)
+ 369                  - 0.5 * consObjB(D,T) * d_sp(S,D,T) * d_sp(S,D,T) ) )
+ 370                  - sum((G,T), genVarInv(G) * g_sp(S,G,T) * periodScale(T) ) )  * Year
+ 371                  - sum(G, genFixInv(G) * ig_sp(G))) =l=eta_sp(S)
+ 372   
+ 373  *** Zonal First Kirchhoffs Law
+ 374   
+ 375    Equation ZFKL;
+ 376    ZFKL(S,Z,T)$probability(S)..
+ 377   
+ 378           sum(D$(consInZone(D,S) = Z.val), d_sp(S,D,T)) =e=
+ 379                       sum(G$(sum(N$(genAtNode(G) = N.val), NodeInZone(N,S)) = Z.val), g_sp(S,G,T) )
+ 380                     - sum(L$(sum(N$(lineStart(L) = N.val), NodeInZone(N,S)) = Z.val and lineInter(S,L) = 1), f_sp(S,L,T))
+ 381                     + sum(L$(sum(N$(lineEnd(L) = N.val),   NodeInZone(N,S)) = Z.val and lineInter(S,L) = 1), f_sp(S,L,T)) ;
+ 382   
+ 383  *** Market Coupling Flow Restrictions
+ 384   
+ 385    Equation MCF1;
+ 386    MCF1(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 0)..   f_sp(S,L,T) =l= lineUB(L);
+ 387    Equation MCF2;
+ 388    MCF2(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 0).. - lineUB(L)=l= f_sp(S,L,T);
+ 389    Equation MCF3;
+ 390    MCF3(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 1)..   f_sp(S,L,T) =l= lineB(L) * lineUB(L);
+ 391    Equation MCF4;
+ 392    MCF4(S,L,T)$(lineInter(S,L) = 1 and lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_sp(S,L,T);
+ 393   
+ 394  ***Generation Capacity Limits
+ 395   
+ 396    Equation GCLSpot ;
+ 397    GCLSpot(S,G,T)..  g_sp(S,G,T) =l= avail(T,G) * ig_sp(G) ;
  398   
- 399  ***--------------------------------------------------------------------------***
- 400  ***                     NETWORK- and REDISPATCH LEVEL                        ***
- 401  ***--------------------------------------------------------------------------***
- 402   
- 403    Equation costRed ;
- 404    costRed..         costRedispatch =e= (1-weight_rd)*sum(S$probability(S), probability(S)
- 405                                           * ( sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
- 406                                             + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR ) )
- 407                                             + sum(B, buFixInv * ib_rd(B) )
- 408                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L))
- 409                                             - weight_rd*(zeta_rd - (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_rd(S))));
- 410   
- 411  *** Conditional Value at Risk Restrictions ***
- 412    Equation CVARRed;
- 413    CVARRed(S)$probability(S)..
- 414          zeta_rd - ( sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
- 415                                             + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR )
- 416                                             + sum(B, buFixInv * ib_rd(B) )
- 417                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) =l=eta_rd(S)
+ 399   
+ 400  ***--------------------------------------------------------------------------***
+ 401  ***                     NETWORK- and REDISPATCH LEVEL                        ***
+ 402  ***--------------------------------------------------------------------------***
+ 403   
+ 404    Equation costRed ;
+ 405    costRed..         costRedispatch =e= (1-weight_rd)*(sum(S$probability(S), probability(S)
+ 406                                           * ( sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
+ 407                                             + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR )))
+ 408                                             + sum(B, buFixInv * ib_rd(B) )
+ 409                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L))
+ 410                                             + weight_rd*CVAR
+ 411                                             ;
+ 412   
+ 413  *** Conditional Value at Risk Restrictions ***
+ 414   
+ 415    Equation CVARRed1;
+ 416    CVARRed1..
+ 417           (VAR_rd + (1/(1-percentile)*sum(S$probability(S), probability(S) * eta_rd(S)))) =l= CVAR
  418   
- 419  ***First Kirchhoffs Law
- 420   
- 421    Equation FKL;
- 422    FKL(S,N,T)$probability(S)..   sum(D$(consAtNode(D) = N.val), SP_DEM(S,D,T)) =e=
- 423                   sum(G$(genAtNode(G)   = N.val), g_rd(S,G,T))
- 424                   + sum(B$(buAtNode(B)  = N.val), gb_rd(S,B,T))
- 425                   + sum(L$(lineEnd(L)   = N.val), f_rd(S,L,T))
- 426                   - sum(L$(lineStart(L) = N.val), f_rd(S,L,T)) ;
+ 419    Equation CVARRed2;
+ 420    CVARRed2(S)$probability(S)..
+ 421           (sum((G,T), genVarInv(G) * ( g_rd(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
+ 422                                             + sum((B,T), buVarInv * gb_rd(S,B,T) * periodScale(T) ) * YEAR )
+ 423                                             + sum(B, buFixInv * ib_rd(B) )
+ 424                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) - VAR_rd =l=eta_rd(S)
+ 425   
+ 426  ***First Kirchhoffs Law
  427   
- 428  ***Second Kirchhoffs Law
- 429   
- 430    Equation SKL1;
- 431    SKL1(S,L,T)$(lineIsNew(L) = 0).. f_rd(S,L,T) + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S,N,T)) - sum(N$(lineEnd(L) = N.val), angle(S,N,T))) =e= 0;
- 432    Equation SKL2;
- 433    SKL2(S,L,T)$(lineIsNew(L) = 1).. - M * (1 - lineB(L)) =l=  f_rd(S,L,T) + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S,N,T)) - sum(N$(lineEnd(L) = N.val), angle(S,N,T)));
- 434    Equation SKL3;
- 435    SKL3(S,L,T)$(lineIsNew(L) = 1).. f_rd(S,L,T) + lineGamma(L) * (sum(N$(N.val = lineStart(L)), angle(S,N,T)) - sum(N$(N.val = lineEnd(L)), angle(S,N,T))) =l= M * (1 - lineB(L));
+ 428    Equation FKL;
+ 429    FKL(S,N,T)$probability(S)..   sum(D$(consAtNode(D) = N.val), SP_DEM(S,D,T)) =e=
+ 430                   sum(G$(genAtNode(G)   = N.val), g_rd(S,G,T))
+ 431                   + sum(B$(buAtNode(B)  = N.val), gb_rd(S,B,T))
+ 432                   + sum(L$(lineEnd(L)   = N.val), f_rd(S,L,T))
+ 433                   - sum(L$(lineStart(L) = N.val), f_rd(S,L,T)) ;
+ 434   
+ 435  ***Second Kirchhoffs Law
  436   
- 437  ***Voltage Phase Angle
- 438   
- 439    Equation VPA;
- 440    VPA(S,N,T)$(N.val = 1).. angle(S,N,T) =e= 0;
- 441   
- 442  ***Trasmission Flow Limits
+ 437    Equation SKL1;
+ 438    SKL1(S,L,T)$(lineIsNew(L) = 0).. f_rd(S,L,T) + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S,N,T)) - sum(N$(lineEnd(L) = N.val), angle(S,N,T))) =e= 0;
+ 439    Equation SKL2;
+ 440    SKL2(S,L,T)$(lineIsNew(L) = 1).. - M * (1 - lineB(L)) =l=  f_rd(S,L,T) + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S,N,T)) - sum(N$(lineEnd(L) = N.val), angle(S,N,T)));
+ 441    Equation SKL3;
+ 442    SKL3(S,L,T)$(lineIsNew(L) = 1).. f_rd(S,L,T) + lineGamma(L) * (sum(N$(N.val = lineStart(L)), angle(S,N,T)) - sum(N$(N.val = lineEnd(L)), angle(S,N,T))) =l= M * (1 - lineB(L));
  443   
- 444    Equation TFL1;
- 445    TFL1(S,L,T)$(lineIsNew(L) = 0)..   f_rd(S,L,T) =l= lineUB(L);
- 446    Equation TFL2;
- 447    TFL2(S,L,T)$(lineIsNew(L) = 0).. - lineUB(L) =l= f_rd(S,L,T);
- 448    Equation TFL3;
- 449    TFL3(S,L,T)$(lineIsNew(L) = 1)..   f_rd(S,L,T) =l= lineB(L) * lineUB(L);
- 450    Equation TFL4;
- 451    TFL4(S,L,T)$(lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_rd(S,L,T);
- 452   
- 453  ***Generation Capacity Limits (Redispatch Level)
- 454   
- 455    Equation GCLRed;
- 456    GCLRed(S,G,T)$probability(S).. g_rd(S,G,T) =l= avail(T,G) * SP_CAP_G(G) ;
- 457   
- 458    Equation GCLBu;
- 459    GCLBu(S,B,T)$probability(S)..  gb_rd(S,B,T) =l= ib_rd(B) ;
- 460   
- 461  *** Fix Spot Market and Redispatch Quantities
- 462   
- 463    Equation fixDem;
- 464    fixDem(S,D,T)$probability(S).. d_rd(S,D,T) =e= SP_DEM(S,D,T)
- 465  *- ls_rd(S,D,T)
- 466    ;
+ 444  ***Voltage Phase Angle
+ 445   
+ 446    Equation VPA;
+ 447    VPA(S,N,T)$(N.val = 1).. angle(S,N,T) =e= 0;
+ 448   
+ 449  ***Trasmission Flow Limits
+ 450   
+ 451    Equation TFL1;
+ 452    TFL1(S,L,T)$(lineIsNew(L) = 0)..   f_rd(S,L,T) =l= lineUB(L);
+ 453    Equation TFL2;
+ 454    TFL2(S,L,T)$(lineIsNew(L) = 0).. - lineUB(L) =l= f_rd(S,L,T);
+ 455    Equation TFL3;
+ 456    TFL3(S,L,T)$(lineIsNew(L) = 1)..   f_rd(S,L,T) =l= lineB(L) * lineUB(L);
+ 457    Equation TFL4;
+ 458    TFL4(S,L,T)$(lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_rd(S,L,T);
+ 459   
+ 460  ***Generation Capacity Limits (Redispatch Level)
+ 461   
+ 462    Equation GCLRed;
+ 463    GCLRed(S,G,T)$probability(S).. g_rd(S,G,T) =l= avail(T,G) * SP_CAP_G(G) ;
+ 464   
+ 465    Equation GCLBu;
+ 466    GCLBu(S,B,T)$probability(S)..  gb_rd(S,B,T) =l= ib_rd(B) ;
  467   
- 468    Equation fixGen;
- 469    fixGen(S,G,T)$probability(S).. g_rd(S,G,T) =e= SP_GEN_G(S,G,T) + g_p_rd(S,G,T) - g_n_rd(S,G,T);
- 470   
- 471  ***--------------------------------------------------------------------------***
- 472  ***                           DEFINITION MODELS                              ***
- 473  ***--------------------------------------------------------------------------***
+ 468  *** Fix Spot Market and Redispatch Quantities
+ 469   
+ 470    Equation fixDem;
+ 471    fixDem(S,D,T)$probability(S).. d_rd(S,D,T) =e= SP_DEM(S,D,T)
+ 472  *- ls_rd(S,D,T)
+ 473    ;
  474   
- 475    Model Spotmarket
- 476    / welfspot,
- 477      ZFKL,
- 478      MCF1,
- 479      MCF2,
- 480      MCF3,
- 481      MCF4,
- 482      GCLSpot /;
- 483   
- 484    Model Redispatch
- 485    / costRed,
- 486      FKL,
- 487      SKL1,
- 488      SKL2,
- 489      SKL3,
- 490      VPA,
- 491      TFL1,
- 492      TFL2,
- 493      TFL3,
- 494      TFL4,
- 495      GCLRed,
- 496      GCLBu,
- 497      fixDem,
- 498      fixGen /;
- 499   
- 500  ***--------------------------------------------------------------------------***
- 501  ***                           END MODEL SECTION                              ***
- 502  ***--------------------------------------------------------------------------***
- 503   
- 504  *** read gurobi.opt
- 505  *  Spotmarket.OptFile = 1 ;
- 506  *  RedispatchWelfare.OptFile = 1 ;
- 507   
- 508  *** time after whcih the solver terminates:
- 509   Spotmarket.reslim = 10000;
- 510   Redispatch.reslim = 36000;
- 511   
- 512   Alias(LineInvest,LineInvest2) ;
+ 475    Equation fixGen;
+ 476    fixGen(S,G,T)$probability(S).. g_rd(S,G,T) =e= SP_GEN_G(S,G,T) + g_p_rd(S,G,T) - g_n_rd(S,G,T);
+ 477   
+ 478  ***--------------------------------------------------------------------------***
+ 479  ***                           DEFINITION MODELS                              ***
+ 480  ***--------------------------------------------------------------------------***
+ 481   
+ 482    Model Spotmarket
+ 483    / welfspot,
+ 484      CVARSpot,
+ 485      ZFKL,
+ 486      MCF1,
+ 487      MCF2,
+ 488      MCF3,
+ 489      MCF4,
+ 490      GCLSpot /;
+ 491   
+ 492    Model Redispatch
+ 493    / costRed,
+ 494      CVARRed1,
+ 495      CVARRed2,
+ 496      FKL,
+ 497      SKL1,
+ 498      SKL2,
+ 499      SKL3,
+ 500      VPA,
+ 501      TFL1,
+ 502      TFL2,
+ 503      TFL3,
+ 504      TFL4,
+ 505      GCLRed,
+ 506      GCLBu,
+ 507      fixDem,
+ 508      fixGen /;
+ 509   
+ 510  ***--------------------------------------------------------------------------***
+ 511  ***                           END MODEL SECTION                              ***
+ 512  ***--------------------------------------------------------------------------***
  513   
- 514   Loop_Probability_results(Loop_Probability,'1')  = 1 - (Loop_Probability.val-1) * 0.1  ;
- 515   Loop_Probability_results(Loop_Probability,'2')  =     (Loop_Probability.val-1) * 0.1  ;
- 516   
- 517  ***--------------------------------------------------------------------------***
- 518  ***           START MODEL LOOP FOR PROBABILITIES AND LINE INVEST             ***
- 519  ***--------------------------------------------------------------------------***
- 520   
- 521   Loop(Loop_Probability,
- 522   
- 523     probability('1') = 1 - (Loop_Probability.val-1) * 0.1 ;
- 524     probability('2') =     (Loop_Probability.val-1) * 0.1 ;
- 525   
- 526       Loop(LineInvest,
- 527   
- 528         lineB(L) = 1$(LineInvest.val=L.val);
- 529   
- 530  *exclude Wind generation in conventional case
- 531  *change buVarInv (Input_2Nodes.gms) for each case 68 / 79
- 533   genVarInv('1') = 35 ;
- 534   genVarInv('2') = 43 ;
- 535   genVarInv('3') = 68 ;
- 536   genVarInv('4') = 38 ;
- 537   genVarInv('5') = 43 ;
- 538   genVarInv('6') = 68 ;
- 539   genVarInv('7') = 0 ;
- 540   genVarInv('8') = 0 ;
- 542   
- 543  ***--------------------------------------------------------------------------***
- 544  ***                        SOLVE SPOT MARKET MODEL                           ***
- 545  ***--------------------------------------------------------------------------***
- 546   
- 547    option clear= welfareSpot ;
- 548    option clear= d_sp        ;
- 549    option clear= g_sp        ;
- 550    option clear= ig_sp       ;
- 551    option clear= f_sp        ;
+ 514  *** read gurobi.opt
+ 515  *  Spotmarket.OptFile = 1 ;
+ 516  *  RedispatchWelfare.OptFile = 1 ;
+ 517   
+ 518  *** time after whcih the solver terminates:
+ 519   Spotmarket.reslim = 10000;
+ 520   Redispatch.reslim = 36000;
+ 521   
+ 522   Alias(LineInvest,LineInvest2) ;
+ 523   
+ 524   Loop_Probability_results(Loop_Probability,'1')  = 1 - (Loop_Probability.val-1) * 0.1  ;
+ 525   Loop_Probability_results(Loop_Probability,'2')  =     (Loop_Probability.val-1) * 0.1  ;
+ 526   
+ 527  ***--------------------------------------------------------------------------***
+ 528  ***           START MODEL LOOP FOR PROBABILITIES AND LINE INVEST             ***
+ 529  ***--------------------------------------------------------------------------***
+ 530   
+ 531   Loop(Loop_Probability,
+ 532   
+ 533     probability('1') = 1 - (Loop_Probability.val-1) * 0.1 ;
+ 534     probability('2') =     (Loop_Probability.val-1) * 0.1 ;
+ 535   
+ 536       Loop(LineInvest,
+ 537   
+ 538         lineB(L) = 1$(LineInvest.val=L.val);
+ 539   
+ 540  *exclude Wind generation in conventional case
+ 541  *change buVarInv (Input_2Nodes.gms) for each case 68 / 79
+ 543   genVarInv('1') = 35 ;
+ 544   genVarInv('2') = 43 ;
+ 545   genVarInv('3') = 68 ;
+ 546   genVarInv('4') = 38 ;
+ 547   genVarInv('5') = 43 ;
+ 548   genVarInv('6') = 68 ;
+ 549   genVarInv('7') = 0 ;
+ 550   genVarInv('8') = 0 ;
  552   
- 553    SOLVE Spotmarket USING QCP MAXIMIZE welfareSpot ;
- 554   
- 555    SP_DEM(S,D,T)   = d_sp.l(S,D,T)          ;
- 556    SP_GEN_G(S,G,T) = g_sp.l(S,G,T)          ;
- 557    SP_CAP_G(G)     = ig_sp.l(G)             ;
- 558    SP_FLOW(S,L,T)  = f_sp.l(S,L,T)          ;
- 559    SP_CAP_L(L)     = lineB(L) * lineUB(L)   ;
- 560   
- 561    wf_sc_SP(S)$probability(S)         = ( sum((D,T), ( consObjA(D,T) * SP_DEM(S,D,T) - 0.5 * consObjB(D,T) * SP_DEM(S,D,T) * SP_DEM(S,D,T) ) * periodScale(T) )
- 562                                         - sum((G,T), genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) ) ) * YEAR
- 563                                         - sum(G, genFixInv(G) * SP_CAP_G(G)) ;
- 564    wf_SP                              = sum(S$probability(S), probability(S) * wf_sc_SP(S) ) ;
- 565    wf_SP_TEST                         = welfareSpot.l ;
- 566    priceD_Spot(S,D,T) $probability(S) = ( consObjA(D,T) - consObjB(D,T) * SP_DEM(S,D,T) ) ;
- 567    priceG_Spot(S,G,T) $probability(S) = sum(Z$(Z.val = GenInZone(G,S)), ZFKL.m(S,Z,T) / Year / periodScale(T) / probability(S));
- 568    wf_SP_d(S,D)       $probability(S) = ( sum(T, (consObjA(D,T) * SP_DEM(S,D,T) - 0.5 * consObjB(D,T) * SP_DEM(S,D,T) * SP_DEM(S,D,T)) * periodScale(T) )
- 569                                         - sum(T, priceD_Spot(S,D,T)  * SP_DEM(S,D,T) * periodScale(T) ) ) * YEAR;
- 570   
- 571  *  avgPriceSpot(S)    $probability(S) = sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * periodScale(T) );
- 572  *  totalAvgPriceSpot = sum(S$probability(S),Probability(S)*(sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * Year * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * Year * periodScale(T) )));
- 573   
+ 553  ***--------------------------------------------------------------------------***
+ 554  ***                        SOLVE SPOT MARKET MODEL                           ***
+ 555  ***--------------------------------------------------------------------------***
+ 556   
+ 557    option clear= welfareSpot ;
+ 558    option clear= d_sp        ;
+ 559    option clear= g_sp        ;
+ 560    option clear= ig_sp       ;
+ 561    option clear= f_sp        ;
+ 562   
+ 563    SOLVE Spotmarket USING QCP MAXIMIZE welfareSpot ;
+ 564   
+ 565   
+ 566    SP_DEM(S,D,T)   = d_sp.l(S,D,T)          ;
+ 567    SP_GEN_G(S,G,T) = g_sp.l(S,G,T)          ;
+ 568    SP_CAP_G(G)     = ig_sp.l(G)             ;
+ 569    SP_FLOW(S,L,T)  = f_sp.l(S,L,T)          ;
+ 570    SP_CAP_L(L)     = lineB(L) * lineUB(L)   ;
+ 571   
+ 572    wf_sc_SP(S)$probability(S)         = ( sum((D,T), ( consObjA(D,T) * SP_DEM(S,D,T) - 0.5 * consObjB(D,T) * SP_DEM(S,D,T) * SP_DEM(S,D,T) ) * periodScale(T) )
+ 573                                         - sum((G,T), genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) ) ) * YEAR
+ 574                                         - sum(G, genFixInv(G) * SP_CAP_G(G)) ;
+ 575    wf_SP                              = sum(S$probability(S), probability(S) * wf_sc_SP(S) ) ;
+ 576    wf_SP_TEST                         = welfareSpot.l ;
+ 577    priceD_Spot(S,D,T) $probability(S) = ( consObjA(D,T) - consObjB(D,T) * SP_DEM(S,D,T) ) ;
+ 578    priceG_Spot(S,G,T) $probability(S) = sum(Z$(Z.val = GenInZone(G,S)), ZFKL.m(S,Z,T) / Year / periodScale(T) / probability(S));
+ 579    wf_SP_d(S,D)       $probability(S) = ( sum(T, (consObjA(D,T) * SP_DEM(S,D,T) - 0.5 * consObjB(D,T) * SP_DEM(S,D,T) * SP_DEM(S,D,T)) * periodScale(T) )
+ 580                                         - sum(T, priceD_Spot(S,D,T)  * SP_DEM(S,D,T) * periodScale(T) ) ) * YEAR;
+ 581   
+ 582  *  avgPriceSpot(S)    $probability(S) = sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * periodScale(T) );
+ 583  *  totalAvgPriceSpot = sum(S$probability(S),Probability(S)*(sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * Year * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * Year * periodScale(T) )));
+ 584   
         option clear= welfareSpot ;
         option clear= d_sp        ;
         option clear= g_sp        ;
         option clear= ig_sp       ;
         option clear= f_sp        ;
- 581   
- 582  ***--------------------------------------------------------------------------***
- 583  ***                         SOLVE REDISPATCH MODEL                           ***
- 584  ***--------------------------------------------------------------------------***
- 585   
- 586   
- 587    option clear = costRedispatch ;
- 588    option clear = f_rd   ;
- 589    option clear = angle  ;
- 590    option clear = d_rd   ;
- 591    option clear = g_rd   ;
- 592    option clear = gb_rd  ;
- 593    option clear = ib_rd  ;
- 594    option clear = g_n_rd ;
- 595    option clear = g_p_rd ;
+ 592   
+ 593  ***--------------------------------------------------------------------------***
+ 594  ***                         SOLVE REDISPATCH MODEL                           ***
+ 595  ***--------------------------------------------------------------------------***
  596   
- 597    SOLVE Redispatch USING LP MINIMIZE costRedispatch ;
- 598   
- 599    RD_GEN_G(S,G,T) = g_rd.l(S,G,T)  ;
- 600    RD_CAP_B(B)     = ib_rd.l(B)     ;
- 601    RD_GEN_B(S,B,T) = gb_rd.l(S,B,T) ;
- 602  *  RD_DEM_L(S,D,T) = ls_rd.l(S,D,T) ;
- 603   
- 604    ct_RD_TEST      = costRedispatch.l      ;
- 605    Test = sum(S$probability(S), probability(S)
- 606                                           * ( sum((G,T), genVarInv(G) * ( g_rd.l(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
- 607                                             + sum((B,T), buVarInv * gb_rd.l(S,B,T) * periodScale(T) ) * YEAR ) )
- 608  *                                         + sum((D,T), DSM * ls_rd(S,D,T) * periodScale(T) ) * YEAR )
- 609                                             + sum(B, buFixInv * ib_rd.l(B) )
- 610                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) ;
- 611   
- 612   
- 613  Display test;
+ 597   
+ 598    option clear = costRedispatch ;
+ 599    option clear = f_rd   ;
+ 600    option clear = angle  ;
+ 601    option clear = d_rd   ;
+ 602    option clear = g_rd   ;
+ 603    option clear = gb_rd  ;
+ 604    option clear = ib_rd  ;
+ 605    option clear = g_n_rd ;
+ 606    option clear = g_p_rd ;
+ 607   
+ 608    SOLVE Redispatch USING LP MINIMIZE costRedispatch ;
+ 609   
+ 610    RD_GEN_G(S,G,T) = g_rd.l(S,G,T)  ;
+ 611    RD_CAP_B(B)     = ib_rd.l(B)     ;
+ 612    RD_GEN_B(S,B,T) = gb_rd.l(S,B,T) ;
+ 613  *  RD_DEM_L(S,D,T) = ls_rd.l(S,D,T) ;
+ 614   
+ 615    ct_RD_TEST      = costRedispatch.l      ;
+ 616    Test = sum(S$probability(S), probability(S)
+ 617                                           * ( sum((G,T), genVarInv(G) * ( g_rd.l(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * YEAR
+ 618                                             + sum((B,T), buVarInv * gb_rd.l(S,B,T) * periodScale(T) ) * YEAR ) )
+ 619  *                                         + sum((D,T), DSM * ls_rd(S,D,T) * periodScale(T) ) * YEAR )
+ 620                                             + sum(B, buFixInv * ib_rd.l(B) )
+ 621                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB(L) ) ;
+ 622   
+ 623   
+ 624  Display test;
         option clear = costRedispatch ;
         option clear = f_rd   ;
         option clear = angle  ;
@@ -608,63 +619,63 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
         option clear = ib_rd  ;
         option clear = g_n_rd ;
         option clear = g_p_rd ;
- 625   
- 626  ***--------------------------------------------------------------------------***
- 627  ***                        CALCULATION OF RESULTS                            ***
- 628  ***--------------------------------------------------------------------------***
- 629   
- 630  *Calculate variable generation costs per scenario (fuel + CO2)
- 631    Cost_sc_sp_g(S)$probability(S)    = sum((G,T),                genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) * YEAR ) ;
- 632  *Calculate redispatch costs existing capacity per scenario
- 633    Cost_sc_rd_g(S)$probability(S) = sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * Year ;
- 634  *Calculate redispatch costs backup capacity per scenario
- 635    Cost_sc_rd_b(S)$probability(S) = sum((B,T),  buVarInv    * ( RD_GEN_B(S,B,T)                   ) * periodScale(T) ) * Year ;
- 636  *Calculate redispatch costs backup capacity per scenario
- 637  *  Cost_sc_rd_l(S)$probability(S) = sum((D,T),  DSM         * ( RD_DEM_L(S,D,T)                   ) * periodScale(T) ) * Year ;
- 638  *Calculate total congestion rent per scenario
- 639    Cost_sc_cr(S)$probability(S)   = sum((L,T)$lineB(L), YEAR * periodScale(T) * abs( SP_FLOW(S,L,T) ) * abs(sum(D$(lineStart(L) =D.val), PriceD_Spot(S,D,T)) - sum(D$(lineEnd(L) = D.val), PriceD_Spot(S,D,T))));
- 640    Cost_fc_l                      = sum(L$SP_CAP_L(L),        lineFixInv(L) ) ;
- 641    Cost_fc_b                      = sum(B,                    buFixInv     * RD_CAP_B(B) ) ;
- 642    Cost_fc_g                      = sum(G,                    genFixInv(G) * SP_CAP_G(G) ) ;
- 643   
- 644  *Calculate all network & backup investment and redispatch costs per scenario
- 645    rediCost(S)$probability(S)     = sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T)) * YEAR
- 646                                    + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) * YEAR
- 647  *                                  + sum((D,T), DSM * RD_DEM_L(S,D,T) * periodScale(T) ) * YEAR
- 648                                    + sum(B, buFixInv * RD_CAP_B(B))
- 649                                    + sum(L$SP_CAP_L(L), lineFixInv(L) )
- 650   
- 651  ;
- 652  *Calculate all network & backup investment and redispatch costs
- 653    totalRediCost                  = sum(S$probability(S), probability(S) * ( sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) )
- 654                                    + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) )
- 655  *                                  + sum((D,T), DSM * RD_DEM_L(S,D,T) * periodScale(T) ) * YEAR)
- 656                                    ) * YEAR
- 657                                    + sum(B, buFixInv * RD_CAP_B(B))
- 658                                    + sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
- 659   
- 660  *Welfare after redispatch and investment costs in scenario S
- 661    wf_sc_all(S)$probability(S)    = ( sum((D,T), ( consObjA(D,T) * SP_dem(S,D,T) - 0.5 * consObjB(D,T) * SP_dem(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) )
- 662                                     - sum((G,T), genVarInv(G) * RD_GEN_G(S,G,T) * periodScale(T) )
- 663                                     - sum((B,T), buVarInv     * RD_GEN_B(S,B,T) * periodScale(T) ) ) * Year
- 664                                       - sum(G,             genFixInv(G)  * SP_CAP_G(G) )
- 665                                       - sum(B,             buFixInv      * RD_CAP_B(B) )
- 666                                       - sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
- 667   
- 668  *Welfare after redispatch for both scenarios
- 669    wf_all                         = sum(S$probability(S), probability(S) * wf_sc_all(S) ) ;
+ 636   
+ 637  ***--------------------------------------------------------------------------***
+ 638  ***                        CALCULATION OF RESULTS                            ***
+ 639  ***--------------------------------------------------------------------------***
+ 640   
+ 641  *Calculate variable generation costs per scenario (fuel + CO2)
+ 642    Cost_sc_sp_g(S)$probability(S)    = sum((G,T),                genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) * YEAR ) ;
+ 643  *Calculate redispatch costs existing capacity per scenario
+ 644    Cost_sc_rd_g(S)$probability(S) = sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) ) * Year ;
+ 645  *Calculate redispatch costs backup capacity per scenario
+ 646    Cost_sc_rd_b(S)$probability(S) = sum((B,T),  buVarInv    * ( RD_GEN_B(S,B,T)                   ) * periodScale(T) ) * Year ;
+ 647  *Calculate redispatch costs backup capacity per scenario
+ 648  *  Cost_sc_rd_l(S)$probability(S) = sum((D,T),  DSM         * ( RD_DEM_L(S,D,T)                   ) * periodScale(T) ) * Year ;
+ 649  *Calculate total congestion rent per scenario
+ 650    Cost_sc_cr(S)$probability(S)   = sum((L,T)$lineB(L), YEAR * periodScale(T) * abs( SP_FLOW(S,L,T) ) * abs(sum(D$(lineStart(L) =D.val), PriceD_Spot(S,D,T)) - sum(D$(lineEnd(L) = D.val), PriceD_Spot(S,D,T))));
+ 651    Cost_fc_l                      = sum(L$SP_CAP_L(L),        lineFixInv(L) ) ;
+ 652    Cost_fc_b                      = sum(B,                    buFixInv     * RD_CAP_B(B) ) ;
+ 653    Cost_fc_g                      = sum(G,                    genFixInv(G) * SP_CAP_G(G) ) ;
+ 654   
+ 655  *Calculate all network & backup investment and redispatch costs per scenario
+ 656    rediCost(S)$probability(S)     = sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T)) * YEAR
+ 657                                    + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) * YEAR
+ 658  *                                  + sum((D,T), DSM * RD_DEM_L(S,D,T) * periodScale(T) ) * YEAR
+ 659                                    + sum(B, buFixInv * RD_CAP_B(B))
+ 660                                    + sum(L$SP_CAP_L(L), lineFixInv(L) )
+ 661   
+ 662  ;
+ 663  *Calculate all network & backup investment and redispatch costs
+ 664    totalRediCost                  = sum(S$probability(S), probability(S) * ( sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) )
+ 665                                    + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) )
+ 666  *                                  + sum((D,T), DSM * RD_DEM_L(S,D,T) * periodScale(T) ) * YEAR)
+ 667                                    ) * YEAR
+ 668                                    + sum(B, buFixInv * RD_CAP_B(B))
+ 669                                    + sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
  670   
- 671  *Prices
- 672    Price_SP_nodalAvg(S,N)$(sum((D,T)$(consAtNode(D) = N.val), SP_DEM(S,D,T))) = sum((D,T)$(consAtNode(D) = N.val), SP_DEM(S,D,T) * PriceD_Spot(S,D,T) * Year * periodScale(T))
- 673                                                                               / sum((D,T)$(consAtNode(D) = N.Val), SP_DEM(S,D,T) * Year * periodScale(T) );
- 674   
- 675    Price_RD_Markup(S)$probability(S)  = ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) - Cost_sc_cr(S) + Cost_fc_l + Cost_fc_b ) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR ) ;
- 676   
- 677    Price_FI_nodal(S,N)$probability(S) = Price_SP_nodalAvg(S,N) + Price_RD_Markup(S) ;
+ 671  *Welfare after redispatch and investment costs in scenario S
+ 672    wf_sc_all(S)$probability(S)    = ( sum((D,T), ( consObjA(D,T) * SP_dem(S,D,T) - 0.5 * consObjB(D,T) * SP_dem(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) )
+ 673                                     - sum((G,T), genVarInv(G) * RD_GEN_G(S,G,T) * periodScale(T) )
+ 674                                     - sum((B,T), buVarInv     * RD_GEN_B(S,B,T) * periodScale(T) ) ) * Year
+ 675                                       - sum(G,             genFixInv(G)  * SP_CAP_G(G) )
+ 676                                       - sum(B,             buFixInv      * RD_CAP_B(B) )
+ 677                                       - sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
  678   
- 679    Demand(s,'1')$probability(S)         = sum(t, SP_DEM(s,'1',t) * periodScale(T) * YEAR ) ;
- 680    Demand(s,'2')$probability(S)         = sum(t, SP_DEM(s,'2',t) * periodScale(T) * YEAR ) ;
+ 679  *Welfare after redispatch for both scenarios
+ 680    wf_all                         = sum(S$probability(S), probability(S) * wf_sc_all(S) ) ;
  681   
+ 682  *Prices
+ 683    Price_SP_nodalAvg(S,N)$(sum((D,T)$(consAtNode(D) = N.val), SP_DEM(S,D,T))) = sum((D,T)$(consAtNode(D) = N.val), SP_DEM(S,D,T) * PriceD_Spot(S,D,T) * Year * periodScale(T))
+ 684                                                                               / sum((D,T)$(consAtNode(D) = N.Val), SP_DEM(S,D,T) * Year * periodScale(T) );
+ 685   
+ 686    Price_RD_Markup(S)$probability(S)  = ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) - Cost_sc_cr(S) + Cost_fc_l + Cost_fc_b ) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR ) ;
+ 687   
+ 688    Price_FI_nodal(S,N)$probability(S) = Price_SP_nodalAvg(S,N) + Price_RD_Markup(S) ;
+ 689   
+ 690    Demand(s,'1')$probability(S)         = sum(t, SP_DEM(s,'1',t) * periodScale(T) * YEAR ) ;
+ 691    Demand(s,'2')$probability(S)         = sum(t, SP_DEM(s,'2',t) * periodScale(T) * YEAR ) ;
+ 692   
       *Nodal welfare in scenario S
       *MISSING TRADE FLOWS !!!!
         nodal_welfare(S,N)$probability(S) = (sum((D,T)$(consAtNode(D) = N.val), (consObjA(D,T) * dem.l(S,D,T) - 0.5 * consObjB(D,T) * dem.l(S,D,T) * dem.l(S,D,T)) * periodScale(T))
@@ -673,47 +684,47 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
                                - sum(B$(buAtNode(B) = N.val), buFixInv * genCbu.l(B))
                                - sum(L$(lineIsNew(L) = 1), lineFixInv(L) * lineB.l(L));
        
- 692   
- 693  ***--------------------------------------------------------------------------***
- 694  ***                       RESULTS to LOOP-PARAMETER                          ***
- 695  ***--------------------------------------------------------------------------***
- 696   
- 697    Loop_welfare_sp_sc(Loop_Probability, LineInvest,S)     = wf_sc_SP(S)   ;
- 698    Loop_welfare_sp(Loop_Probability, LineInvest)          = wf_SP         ;
- 699    Loop_welfare_all_sc(Loop_Probability,LineInvest,S)     = wf_sc_all(S)  ;
- 700    Loop_welfare_all(Loop_Probability, LineInvest)         = wf_all        ;
- 701    Loop_welfare_sp_TEST(Loop_Probability, LineInvest)     = wf_sp_TEST    ;
- 702    Loop_welfare_sp_sc_d(Loop_Probability, LineInvest,S,D) = wf_sp_d(S,D)  ;
  703   
- 704    Loop_nodal(Loop_Probability,LineInvest,S,'1',"CS")$probability(S) = ( sum((D,T), ( consObjA('1',T) * SP_dem(S,'1',T) - 0.5 * consObjB('1',T) * SP_dem(S,'1',T) * SP_dem(S,'1',T) ) * periodScale(T) ) ) * YEAR ;
- 705    Loop_nodal(Loop_Probability,LineInvest,S,'2',"CS")$probability(S) = ( sum((D,T), ( consObjA('2',T) * SP_dem(S,'2',T) - 0.5 * consObjB('2',T) * SP_dem(S,'2',T) * SP_dem(S,'2',T) ) * periodScale(T) ) ) * YEAR;
- 706    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_G")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
- 707                                                                           sum(T, genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) ) ) * Year ;
- 708    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_P")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
- 709                                                                           sum(T, priceG_Spot(S,G,T)  * SP_GEN_G(S,G,T) * periodScale(T) ) ) * Year ;
- 710    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_P")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
- 711                                                                           genFixInv(G) * SP_CAP_G(G) ) ;
- 712    Loop_nodal(Loop_Probability,LineInvest,S,N,"CR")$probability(S)  = Cost_sc_cr(S) * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
- 713    Loop_nodal(Loop_Probability,LineInvest,S,N,"C_L")$probability(S) = Cost_fc_l * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
- 714    Loop_nodal(Loop_Probability,LineInvest,S,N,"C_B")$probability(S) = Cost_fc_b * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
- 715    Loop_nodal(Loop_Probability,LineInvest,S,N,"RD_G")$probability(S) = ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) ) * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
- 716   
- 717    Loop_genInv(Loop_Probability, LineInvest, G)           = SP_CAP_G(G)   ;
- 718    Loop_lineInv(Loop_Probability,LineInvest)              = sum(l, SP_CAP_L(L) ) ;
- 719   
- 720    Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T)     = priceD_Spot(S,D,T)     ;
- 721    Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T)     = priceG_Spot(S,G,T)     ;
- 722   
- 723    Loop_price_SP_nodal(Loop_Probability,LineInvest,S,N)$probability(S)      = Price_SP_nodalAvg(S,N) ;
- 724    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"all")$probability(S) = Price_RD_Markup(S)     ;
- 725    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"CR")$probability(S)  = - Cost_sc_cr(S) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )  ;
- 726    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"C_L")$probability(S) = + Cost_fc_l / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )      ;
- 727    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"C_B")$probability(S) = + Cost_fc_b / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )      ;
- 728    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"RD_G")$probability(S)= ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) ) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )  ;
- 729    Loop_price_Final(Loop_Probability,LineInvest,S,N)      = Price_FI_nodal(S,N)    ;
+ 704  ***--------------------------------------------------------------------------***
+ 705  ***                       RESULTS to LOOP-PARAMETER                          ***
+ 706  ***--------------------------------------------------------------------------***
+ 707   
+ 708    Loop_welfare_sp_sc(Loop_Probability, LineInvest,S)     = wf_sc_SP(S)   ;
+ 709    Loop_welfare_sp(Loop_Probability, LineInvest)          = wf_SP         ;
+ 710    Loop_welfare_all_sc(Loop_Probability,LineInvest,S)     = wf_sc_all(S)  ;
+ 711    Loop_welfare_all(Loop_Probability, LineInvest)         = wf_all        ;
+ 712    Loop_welfare_sp_TEST(Loop_Probability, LineInvest)     = wf_sp_TEST    ;
+ 713    Loop_welfare_sp_sc_d(Loop_Probability, LineInvest,S,D) = wf_sp_d(S,D)  ;
+ 714   
+ 715    Loop_nodal(Loop_Probability,LineInvest,S,'1',"CS")$probability(S) = ( sum((D,T), ( consObjA('1',T) * SP_dem(S,'1',T) - 0.5 * consObjB('1',T) * SP_dem(S,'1',T) * SP_dem(S,'1',T) ) * periodScale(T) ) ) * YEAR ;
+ 716    Loop_nodal(Loop_Probability,LineInvest,S,'2',"CS")$probability(S) = ( sum((D,T), ( consObjA('2',T) * SP_dem(S,'2',T) - 0.5 * consObjB('2',T) * SP_dem(S,'2',T) * SP_dem(S,'2',T) ) * periodScale(T) ) ) * YEAR;
+ 717    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_G")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
+ 718                                                                           sum(T, genVarInv(G) * SP_GEN_G(S,G,T) * periodScale(T) ) ) * Year ;
+ 719    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_P")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
+ 720                                                                           sum(T, priceG_Spot(S,G,T)  * SP_GEN_G(S,G,T) * periodScale(T) ) ) * Year ;
+ 721    Loop_nodal(Loop_Probability,LineInvest,S,N,"SP_P")$probability(S) = sum(G$(ord(N)=genAtNode(G)),
+ 722                                                                           genFixInv(G) * SP_CAP_G(G) ) ;
+ 723    Loop_nodal(Loop_Probability,LineInvest,S,N,"CR")$probability(S)  = Cost_sc_cr(S) * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
+ 724    Loop_nodal(Loop_Probability,LineInvest,S,N,"C_L")$probability(S) = Cost_fc_l * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
+ 725    Loop_nodal(Loop_Probability,LineInvest,S,N,"C_B")$probability(S) = Cost_fc_b * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
+ 726    Loop_nodal(Loop_Probability,LineInvest,S,N,"RD_G")$probability(S) = ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) ) * Demand(s,n) / sum(nn, Demand(s,nn) ) ;
+ 727   
+ 728    Loop_genInv(Loop_Probability, LineInvest, G)           = SP_CAP_G(G)   ;
+ 729    Loop_lineInv(Loop_Probability,LineInvest)              = sum(l, SP_CAP_L(L) ) ;
  730   
- 731    Loop_demand(Loop_Probability, LineInvest,S,N)          = Demand(s,n) ;
- 732   
+ 731    Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T)     = priceD_Spot(S,D,T)     ;
+ 732    Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T)     = priceG_Spot(S,G,T)     ;
+ 733   
+ 734    Loop_price_SP_nodal(Loop_Probability,LineInvest,S,N)$probability(S)      = Price_SP_nodalAvg(S,N) ;
+ 735    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"all")$probability(S) = Price_RD_Markup(S)     ;
+ 736    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"CR")$probability(S)  = - Cost_sc_cr(S) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )  ;
+ 737    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"C_L")$probability(S) = + Cost_fc_l / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )      ;
+ 738    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"C_B")$probability(S) = + Cost_fc_b / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )      ;
+ 739    Loop_price_RD_markup(Loop_Probability,LineInvest,S,"RD_G")$probability(S)= ( Cost_sc_rd_g(S) + Cost_sc_rd_b(S) ) / sum((D,T), SP_DEM(S,D,T) * periodScale(T) * YEAR )  ;
+ 740    Loop_price_Final(Loop_Probability,LineInvest,S,N)      = Price_FI_nodal(S,N)    ;
+ 741   
+ 742    Loop_demand(Loop_Probability, LineInvest,S,N)          = Demand(s,n) ;
+ 743   
       *Individual price components
         Loop_results_price_N(Loop_Probability,LineInvest,S,N,"p_sp")$probability(S) = sum(T, sum(D$(consAtNode(D)=ord(N)), ( priceSpot(S,D,T) * demSpot(S,D,T) ) * periodScale(T) ) )
                                                                                / sum(T, sum(D$(consAtNode(D)=ord(N)), demSpot(S,D,T) ) * periodScale(T) ) ;
@@ -727,120 +738,120 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
         Loop_results_price_A(Loop_Probability,LineInvest,S,"p_rd")$probability(S) = Loop_results_price_N(Loop_Probability,LineInvest,S,'1',"p_rd") ;
         Loop_results_price_A(Loop_Probability,LineInvest,S,"p_cr")$probability(S) = Loop_results_price_N(Loop_Probability,LineInvest,S,'1',"p_cr") ;
        
- 748   
- 749    Loop_redispatch_TEST(Loop_Probability, LineInvest)   = ct_rd_TEST    ;
- 750    Loop_redispatch_sc(Loop_Probability, LineInvest,s)   = RediCost(S) ;
- 751    Loop_redispatch(Loop_Probability, LineInvest)        = totalRediCost ;
- 752   
- 753   
- 754   
- 755  *Individual rents for consumers, producers and TSOs
- 756    Loop_rents_CS(Loop_Probability,LineInvest,D,S)$probability(S) = ( sum( (T), ( consObjA(D,T) * SP_dem(S,D,T) - 0.5 * consObjB(D,T) * SP_dem(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) )
- 757                                                                    - sum( (T), ( PriceD_Spot(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) ) ) * YEAR ;
- 758   
- 759    Loop_rents_PS(Loop_Probability,LineInvest,G,S)$(probability(S) and SP_CAP_G(G)) =  ( sum( (T), ( PriceG_Spot(S,G,T) - genVarInv(G) ) * SP_GEN_G(S,G,T) * periodScale(T) ) * YEAR
- 760                                                                                           - genFixInv(G) * SP_CAP_G(G) ) ;
- 761   
- 762    Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"CS")               = sum(D$(consAtNode(D)=ord(N)), Loop_rents_CS(Loop_Probability,LineInvest,D,S) );
- 763    Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"PS")               = sum(G$(genAtNode(G)=ord(N)),  Loop_rents_PS(Loop_Probability,LineInvest,G,S) );
- 764    Loop_results_rents_A(Loop_Probability,LineInvest,S,"CS")                 = sum(n, Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"CS") ) ;
- 765    Loop_results_rents_A(Loop_Probability,LineInvest,S,"PS")                 = sum(n, Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"PS") ) ;
- 766    Loop_results_rents_A(Loop_Probability,LineInvest,S,"CR")                 = Cost_sc_cr(S)   ;
- 767    Loop_results_rents_A(Loop_Probability,LineInvest,S,"SP_G")               = Cost_sc_sp_g(S) ;
- 768    Loop_results_rents_A(Loop_Probability,LineInvest,S,"RD_G")               = Cost_sc_rd_g(S) ;
- 769    Loop_results_rents_A(Loop_Probability,LineInvest,S,"RD_B")               = Cost_sc_rd_b(S) ;
- 770    Loop_results_rents_A(Loop_Probability,LineInvest,S,"SP_G")               = Cost_sc_sp_g(S) ;
- 771    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_L")$probability(S) = Cost_fc_l ;
- 772    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_B")$probability(S) = Cost_fc_b ;
- 773    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_G")$probability(S) = Cost_fc_g ;
- 774   
- 775    Loop_profits_PS(Loop_Probability,LineInvest,G,S)$sum(T, SP_GEN_G(S,G,T)) = Loop_rents_PS(Loop_Probability,LineInvest,G,S) / ( sum(T, SP_GEN_G(S,G,T) * periodScale(T) ) * YEAR ) ;
- 776   
- 777   
- 778  ***--------------------------------------------------------------------------***
- 779  ***                     CLEAR PARAMETERs OF MODEL RUN                        ***
- 780  ***--------------------------------------------------------------------------***
- 781   
- 782  * Clear Spot Resuls
- 783    option clear= SP_DEM           ;
- 784    option clear= SP_GEN_G         ;
- 785    option clear= SP_CAP_G         ;
- 786    option clear= SP_FLOW          ;
- 787    option clear= SP_CAP_L         ;
+ 759   
+ 760    Loop_redispatch_TEST(Loop_Probability, LineInvest)   = ct_rd_TEST    ;
+ 761    Loop_redispatch_sc(Loop_Probability, LineInvest,s)   = RediCost(S) ;
+ 762    Loop_redispatch(Loop_Probability, LineInvest)        = totalRediCost ;
+ 763   
+ 764   
+ 765   
+ 766  *Individual rents for consumers, producers and TSOs
+ 767    Loop_rents_CS(Loop_Probability,LineInvest,D,S)$probability(S) = ( sum( (T), ( consObjA(D,T) * SP_dem(S,D,T) - 0.5 * consObjB(D,T) * SP_dem(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) )
+ 768                                                                    - sum( (T), ( PriceD_Spot(S,D,T) * SP_dem(S,D,T) ) * periodScale(T) ) ) * YEAR ;
+ 769   
+ 770    Loop_rents_PS(Loop_Probability,LineInvest,G,S)$(probability(S) and SP_CAP_G(G)) =  ( sum( (T), ( PriceG_Spot(S,G,T) - genVarInv(G) ) * SP_GEN_G(S,G,T) * periodScale(T) ) * YEAR
+ 771                                                                                           - genFixInv(G) * SP_CAP_G(G) ) ;
+ 772   
+ 773    Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"CS")               = sum(D$(consAtNode(D)=ord(N)), Loop_rents_CS(Loop_Probability,LineInvest,D,S) );
+ 774    Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"PS")               = sum(G$(genAtNode(G)=ord(N)),  Loop_rents_PS(Loop_Probability,LineInvest,G,S) );
+ 775    Loop_results_rents_A(Loop_Probability,LineInvest,S,"CS")                 = sum(n, Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"CS") ) ;
+ 776    Loop_results_rents_A(Loop_Probability,LineInvest,S,"PS")                 = sum(n, Loop_results_rents_N(Loop_Probability,LineInvest,S,N,"PS") ) ;
+ 777    Loop_results_rents_A(Loop_Probability,LineInvest,S,"CR")                 = Cost_sc_cr(S)   ;
+ 778    Loop_results_rents_A(Loop_Probability,LineInvest,S,"SP_G")               = Cost_sc_sp_g(S) ;
+ 779    Loop_results_rents_A(Loop_Probability,LineInvest,S,"RD_G")               = Cost_sc_rd_g(S) ;
+ 780    Loop_results_rents_A(Loop_Probability,LineInvest,S,"RD_B")               = Cost_sc_rd_b(S) ;
+ 781    Loop_results_rents_A(Loop_Probability,LineInvest,S,"SP_G")               = Cost_sc_sp_g(S) ;
+ 782    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_L")$probability(S) = Cost_fc_l ;
+ 783    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_B")$probability(S) = Cost_fc_b ;
+ 784    Loop_results_rents_A(Loop_Probability,LineInvest,S,"C_G")$probability(S) = Cost_fc_g ;
+ 785   
+ 786    Loop_profits_PS(Loop_Probability,LineInvest,G,S)$sum(T, SP_GEN_G(S,G,T)) = Loop_rents_PS(Loop_Probability,LineInvest,G,S) / ( sum(T, SP_GEN_G(S,G,T) * periodScale(T) ) * YEAR ) ;
+ 787   
  788   
- 789    option clear= wf_sc_SP         ;
- 790    option clear= wf_SP            ;
- 791    option clear= wf_sp_TEST       ;
- 792    option clear= wf_sp_d          ;
- 793    option clear= priceD_Spot      ;
- 794    option clear= priceG_Spot      ;
- 795   
- 796  * Clear RD Results
- 797    option clear= RD_GEN_G         ;
- 798    option clear= RD_CAP_B         ;
- 799    option clear= RD_GEN_B         ;
- 800    option clear= ct_RD_TEST       ;
- 801   
- 802  * Clear calculation results
- 803    option clear= Cost_sc_sp_g     ;
- 804    option clear= Cost_sc_rd_g     ;
- 805    option clear= Cost_sc_rd_b     ;
- 806    option clear= Cost_sc_cr       ;
- 807    option clear= Cost_fc_l        ;
- 808    option clear= Cost_fc_b        ;
- 809    option clear= Cost_fc_g        ;
- 810   
- 811    option clear= rediCost         ;
- 812    option clear= totalRediCost    ;
- 813    option clear= wf_sc_all        ;
- 814    option clear= wf_all           ;
- 815   
- 816    option clear= Price_SP_nodalAvg;
- 817    option clear= Price_RD_Markup  ;
- 818    option clear= Price_FI_nodal   ;
- 819   
- 820      );
- 821    );
- 822   
- 823  ***--------------------------------------------------------------------------***
- 824  ***                            END OF MODEL LOOP                             ***
- 825  ***--------------------------------------------------------------------------***
+ 789  ***--------------------------------------------------------------------------***
+ 790  ***                     CLEAR PARAMETERs OF MODEL RUN                        ***
+ 791  ***--------------------------------------------------------------------------***
+ 792   
+ 793  * Clear Spot Resuls
+ 794    option clear= SP_DEM           ;
+ 795    option clear= SP_GEN_G         ;
+ 796    option clear= SP_CAP_G         ;
+ 797    option clear= SP_FLOW          ;
+ 798    option clear= SP_CAP_L         ;
+ 799   
+ 800    option clear= wf_sc_SP         ;
+ 801    option clear= wf_SP            ;
+ 802    option clear= wf_sp_TEST       ;
+ 803    option clear= wf_sp_d          ;
+ 804    option clear= priceD_Spot      ;
+ 805    option clear= priceG_Spot      ;
+ 806   
+ 807  * Clear RD Results
+ 808    option clear= RD_GEN_G         ;
+ 809    option clear= RD_CAP_B         ;
+ 810    option clear= RD_GEN_B         ;
+ 811    option clear= ct_RD_TEST       ;
+ 812   
+ 813  * Clear calculation results
+ 814    option clear= Cost_sc_sp_g     ;
+ 815    option clear= Cost_sc_rd_g     ;
+ 816    option clear= Cost_sc_rd_b     ;
+ 817    option clear= Cost_sc_cr       ;
+ 818    option clear= Cost_fc_l        ;
+ 819    option clear= Cost_fc_b        ;
+ 820    option clear= Cost_fc_g        ;
+ 821   
+ 822    option clear= rediCost         ;
+ 823    option clear= totalRediCost    ;
+ 824    option clear= wf_sc_all        ;
+ 825    option clear= wf_all           ;
  826   
- 827   
- 828  ***--------------------------------------------------------------------------***
- 829  ***                 OUTPUT WITH RESULTS FOR BEST LINE INVEST                 ***
- 830  ***--------------------------------------------------------------------------***
- 831   
- 832    Parameter
- 833    Results_genInv(Loop_Probability,G)
- 834    Results_lineInv(Loop_Probability)
- 835   
- 836    maxWelfare(Loop_Probability)
- 837    Results_welfare_sp_sc(Loop_Probability,S)
- 838    Results_welfare_sp(Loop_Probability)
- 839    Results_welfare_sp_sc_d(Loop_Probability,S,D)
- 840    Results_welfare_sp_test(Loop_Probability)
- 841    Results_welfare_all_sc(Loop_Probability,S)
- 842    Results_welfare_all(Loop_Probability)
- 843   
- 844   
- 845    Results_redispatch_sc(Loop_Probability,S)
- 846    Results_redispatch_all(Loop_Probability)
- 847    Results_redispatch_all_TEST(Loop_Probability)
- 848   
- 849    Results_price_SP_D(Loop_Probability,S,D,T)
- 850    Results_price_SP_G(Loop_Probability,S,G,T)
- 851    Results_price_SP_nodal(Loop_Probability,S,N)
- 852    Results_price_RD_Markup(Loop_Probability,S,results)
- 853    Results_price_FI_nodal(Loop_Probability,S,N)
+ 827    option clear= Price_SP_nodalAvg;
+ 828    option clear= Price_RD_Markup  ;
+ 829    option clear= Price_FI_nodal   ;
+ 830   
+ 831      );
+ 832    );
+ 833   
+ 834  ***--------------------------------------------------------------------------***
+ 835  ***                            END OF MODEL LOOP                             ***
+ 836  ***--------------------------------------------------------------------------***
+ 837   
+ 838   
+ 839  ***--------------------------------------------------------------------------***
+ 840  ***                 OUTPUT WITH RESULTS FOR BEST LINE INVEST                 ***
+ 841  ***--------------------------------------------------------------------------***
+ 842   
+ 843    Parameter
+ 844    Results_genInv(Loop_Probability,G)
+ 845    Results_lineInv(Loop_Probability)
+ 846   
+ 847    maxWelfare(Loop_Probability)
+ 848    Results_welfare_sp_sc(Loop_Probability,S)
+ 849    Results_welfare_sp(Loop_Probability)
+ 850    Results_welfare_sp_sc_d(Loop_Probability,S,D)
+ 851    Results_welfare_sp_test(Loop_Probability)
+ 852    Results_welfare_all_sc(Loop_Probability,S)
+ 853    Results_welfare_all(Loop_Probability)
  854   
- 855    Results_results_rents_A(Loop_Probability,S,results)
- 856    Results_rents_PS(Loop_Probability,G,S)
- 857    Results_profits_PS(Loop_Probability,G,S)
- 858   
- 859    Results_demand(Loop_Probability,S,N)
- 860    Results_nodal(Loop_Probability,S,N,results)
- 861   
+ 855   
+ 856    Results_redispatch_sc(Loop_Probability,S)
+ 857    Results_redispatch_all(Loop_Probability)
+ 858    Results_redispatch_all_TEST(Loop_Probability)
+ 859   
+ 860    Results_price_SP_D(Loop_Probability,S,D,T)
+ 861    Results_price_SP_G(Loop_Probability,S,G,T)
+ 862    Results_price_SP_nodal(Loop_Probability,S,N)
+ 863    Results_price_RD_Markup(Loop_Probability,S,results)
+ 864    Results_price_FI_nodal(Loop_Probability,S,N)
+ 865   
+ 866    Results_results_rents_A(Loop_Probability,S,results)
+ 867    Results_rents_PS(Loop_Probability,G,S)
+ 868    Results_profits_PS(Loop_Probability,G,S)
+ 869   
+ 870    Results_demand(Loop_Probability,S,N)
+ 871    Results_nodal(Loop_Probability,S,N,results)
+ 872   
         Results_nodal_welfare(Loop_Probability,S,N)
         Results_avgPriceSpot(Loop_Probability,S)
         Results_totalAvgPriceSpot(Loop_Probability)
@@ -858,45 +869,45 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
        
         Results_results_price_N(Loop_Probability,S,N,results)
         Results_results_price_A(Loop_Probability,S,results)
- 881    ;
- 882   
- 883   
- 884    Loop(LineInvest,
- 885   
- 886      maxWelfare(Loop_Probability)$(Loop_welfare_all(Loop_Probability,LineInvest)=smax(LineInvest2, Loop_welfare_all(Loop_Probability,LineInvest2) )) = LineInvest.val             ;
- 887   
- 888    );
- 889   
- 890    Results_genInv(Loop_Probability,G)                     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_genInv(Loop_Probability, LineInvest, G) )         ;
- 891    Results_lineInv(Loop_Probability)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_lineInv(Loop_Probability, LineInvest) )           ;
- 892   
- 893    Results_welfare_sp_sc(Loop_Probability,S)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_sc(Loop_Probability,LineInvest,S) )    ;
- 894    Results_welfare_sp(Loop_Probability)                   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp(Loop_Probability,LineInvest) )         ;
- 895    Results_welfare_sp_TEST(Loop_Probability)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_TEST(Loop_Probability,LineInvest) )    ;
- 896    Results_welfare_sp_sc_d(Loop_Probability,S,D)          = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_sc_d(Loop_Probability,LineInvest,S,D) );
- 897   
- 898    Results_welfare_all_sc(Loop_Probability,S)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_all_sc(Loop_Probability,LineInvest,S) )   ;
- 899    Results_welfare_all(Loop_Probability)                  = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_all(Loop_Probability,LineInvest) )        ;
- 900  *  Results_nodal_welfare(Loop_Probability,S,N)     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_nodal_welfare(Loop_Probability,LineInvest,S,N)) ;
- 901   
- 902    Results_redispatch_sc(Loop_Probability,S)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch_sc(Loop_Probability, LineInvest,S) )   ;
- 903    Results_redispatch_all(Loop_Probability)               = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch(Loop_Probability, LineInvest)      )   ;
- 904    Results_redispatch_all_TEST(Loop_Probability)          = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch_TEST(Loop_Probability, LineInvest) )   ;
- 905   
- 906    Results_price_SP_D(Loop_Probability,S,D,T)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T) )   ;
- 907    Results_price_SP_G(Loop_Probability,S,G,T)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T) )   ;
- 908    Results_price_SP_nodal(Loop_Probability,S,N)           = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_nodal(Loop_Probability,LineInvest,S,N) ) ;
- 909    Results_price_RD_Markup(Loop_Probability,S,results)    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_RD_Markup(Loop_Probability,LineInvest,S, results) )  ;
- 910    Results_price_FI_nodal(Loop_Probability,S,N)           = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_Final(Loop_Probability,LineInvest,S,N) )    ;
- 911   
- 912    Results_results_rents_A(Loop_Probability,S,results)    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_results_rents_A(Loop_Probability,LineInvest,S,results) )     ;
- 913    Results_rents_PS(Loop_Probability,G,S)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability) and Loop_genInv(Loop_Probability,LineInvest,G)), Loop_rents_PS(Loop_Probability,LineInvest,G,S))     ;
- 914    Results_profits_PS(Loop_Probability,G,S)               = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability) and Loop_genInv(Loop_Probability,LineInvest,G)), Loop_profits_PS(Loop_Probability,LineInvest,G,S))     ;
- 915   
- 916    Results_demand(Loop_Probability,S,N)                   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_Demand(Loop_Probability,LineInvest,S,N) )         ;
- 917    Results_nodal(Loop_Probability,S,N,results)                    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_Nodal(Loop_Probability,LineInvest,S,N,results) )          ;
- 918   
- 919   
+ 892    ;
+ 893   
+ 894   
+ 895    Loop(LineInvest,
+ 896   
+ 897      maxWelfare(Loop_Probability)$(Loop_welfare_all(Loop_Probability,LineInvest)=smax(LineInvest2, Loop_welfare_all(Loop_Probability,LineInvest2) )) = LineInvest.val             ;
+ 898   
+ 899    );
+ 900   
+ 901    Results_genInv(Loop_Probability,G)                     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_genInv(Loop_Probability, LineInvest, G) )         ;
+ 902    Results_lineInv(Loop_Probability)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_lineInv(Loop_Probability, LineInvest) )           ;
+ 903   
+ 904    Results_welfare_sp_sc(Loop_Probability,S)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_sc(Loop_Probability,LineInvest,S) )    ;
+ 905    Results_welfare_sp(Loop_Probability)                   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp(Loop_Probability,LineInvest) )         ;
+ 906    Results_welfare_sp_TEST(Loop_Probability)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_TEST(Loop_Probability,LineInvest) )    ;
+ 907    Results_welfare_sp_sc_d(Loop_Probability,S,D)          = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_sp_sc_d(Loop_Probability,LineInvest,S,D) );
+ 908   
+ 909    Results_welfare_all_sc(Loop_Probability,S)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_all_sc(Loop_Probability,LineInvest,S) )   ;
+ 910    Results_welfare_all(Loop_Probability)                  = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_welfare_all(Loop_Probability,LineInvest) )        ;
+ 911  *  Results_nodal_welfare(Loop_Probability,S,N)     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_nodal_welfare(Loop_Probability,LineInvest,S,N)) ;
+ 912   
+ 913    Results_redispatch_sc(Loop_Probability,S)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch_sc(Loop_Probability, LineInvest,S) )   ;
+ 914    Results_redispatch_all(Loop_Probability)               = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch(Loop_Probability, LineInvest)      )   ;
+ 915    Results_redispatch_all_TEST(Loop_Probability)          = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_redispatch_TEST(Loop_Probability, LineInvest) )   ;
+ 916   
+ 917    Results_price_SP_D(Loop_Probability,S,D,T)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T) )   ;
+ 918    Results_price_SP_G(Loop_Probability,S,G,T)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T) )   ;
+ 919    Results_price_SP_nodal(Loop_Probability,S,N)           = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_SP_nodal(Loop_Probability,LineInvest,S,N) ) ;
+ 920    Results_price_RD_Markup(Loop_Probability,S,results)    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_RD_Markup(Loop_Probability,LineInvest,S, results) )  ;
+ 921    Results_price_FI_nodal(Loop_Probability,S,N)           = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_price_Final(Loop_Probability,LineInvest,S,N) )    ;
+ 922   
+ 923    Results_results_rents_A(Loop_Probability,S,results)    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_results_rents_A(Loop_Probability,LineInvest,S,results) )     ;
+ 924    Results_rents_PS(Loop_Probability,G,S)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability) and Loop_genInv(Loop_Probability,LineInvest,G)), Loop_rents_PS(Loop_Probability,LineInvest,G,S))     ;
+ 925    Results_profits_PS(Loop_Probability,G,S)               = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability) and Loop_genInv(Loop_Probability,LineInvest,G)), Loop_profits_PS(Loop_Probability,LineInvest,G,S))     ;
+ 926   
+ 927    Results_demand(Loop_Probability,S,N)                   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_Demand(Loop_Probability,LineInvest,S,N) )         ;
+ 928    Results_nodal(Loop_Probability,S,N,results)                    = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_Nodal(Loop_Probability,LineInvest,S,N,results) )          ;
+ 929   
+ 930   
         Results_avgPriceSpot(Loop_Probability,S)        = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_avgPriceSpot(Loop_Probability,LineInvest,S) )    ;
         Results_lineInvCost(Loop_Probability)           = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_lineInvCost(Loop_Probability,LineInvest) )       ;
         Results_genCost(Loop_Probability)               = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_genCost(Loop_Probability,LineInvest) )           ;
@@ -925,9 +936,9 @@ INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
        
         Results_results_price_N(Loop_Probability,S,N,results) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_results_price_N(Loop_Probability,LineInvest,S,N,results) ) ;
         Results_results_price_A(Loop_Probability,S,results)   = sum(LineInvest$(ord(LineInvest)=maxWelfare(Loop_Probability)), Loop_results_price_A(Loop_Probability,LineInvest,S,results) )     ;
- 950   
- 951  *$include OutputWriter.gms
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 2
+ 961   
+ 962  *$include OutputWriter.gms
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 2
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 Include File Summary
 
@@ -948,10 +959,10 @@ Include File Summary
     12      307 INCLUDE        1      47  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
 
 
-COMPILATION TIME     =        0.078 SECONDS      3 MB  25.1.3 r4e34d435fbd WEX-WEI
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 3
+COMPILATION TIME     =        0.063 SECONDS      3 MB  25.1.3 r4e34d435fbd WEX-WEI
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 3
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE Spotmarket Using QCP From line 553
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
 
 
 LOOPS                           Loop_Probability   1
@@ -960,52 +971,52 @@ LOOPS                           Loop_Probability   1
 
 MODEL STATISTICS
 
-BLOCKS OF EQUATIONS           7     SINGLE EQUATIONS        9,201
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS        9,202
 BLOCKS OF VARIABLES           7     SINGLE VARIABLES        8,411
-NON ZERO ELEMENTS        19,211     NON LINEAR N-Z              0
-DERIVATIVE POOL              20     CONSTANT POOL             187
-CODE LENGTH                   0
+NON ZERO ELEMENTS        25,621     NON LINEAR N-Z          1,600
+DERIVATIVE POOL              20     CONSTANT POOL             189
+CODE LENGTH              11,209
 
 
-GENERATION TIME      =        0.016 SECONDS      7 MB  25.1.3 r4e34d435fbd WEX-WEI
+GENERATION TIME      =        0.093 SECONDS      7 MB  25.1.3 r4e34d435fbd WEX-WEI
 
 
-EXECUTION TIME       =        0.016 SECONDS      7 MB  25.1.3 r4e34d435fbd WEX-WEI
+EXECUTION TIME       =        0.093 SECONDS      7 MB  25.1.3 r4e34d435fbd WEX-WEI
                L O O P S         Loop_Probability 1
                                  LineInvest 1
 
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 4
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 4
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE Spotmarket Using QCP From line 553
+Solution Report     SOLVE Spotmarket Using QCP From line 563
 
 
                S O L V E      S U M M A R Y
 
      MODEL   Spotmarket          OBJECTIVE  welfareSpot
      TYPE    QCP                 DIRECTION  MAXIMIZE
-     SOLVER  GUROBI              FROM LINE  553
+     SOLVER  GUROBI              FROM LINE  563
 
-**** SOLVER STATUS     1 Normal Completion         
-**** MODEL STATUS      14 No Solution Returned     
-**** OBJECTIVE VALUE               NA
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1529094.8634
 
- RESOURCE USAGE, LIMIT          0.003     10000.000
+ RESOURCE USAGE, LIMIT          1.155     10000.000
  ITERATION COUNT, LIMIT         0    2000000000
  EVALUATION ERRORS             NA             0
 Gurobi link license.
 Gurobi library version 8.1.0
 Space for names approximately 0.38 Mb
-LP status(4): Model was proven to be either infeasible or unbounded.
-***
-*** Gurobi reports the model to be either infeasible or unbounded.
-*** Use option 'rerun 1' in a GAMS/Gurobi option file
-*** to determine the primal solution status.
-***
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
 
-No solution returned
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 5
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                           400  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 5
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Model Statistics    SOLVE Redispatch Using LP From line 597
+Model Statistics    SOLVE Redispatch Using LP From line 608
 
 
 LOOPS                           Loop_Probability   1
@@ -1014,94 +1025,1673 @@ LOOPS                           Loop_Probability   1
 
 MODEL STATISTICS
 
-BLOCKS OF EQUATIONS          14     SINGLE EQUATIONS       19,201
-BLOCKS OF VARIABLES          11     SINGLE VARIABLES       15,205
-NON ZERO ELEMENTS        41,605
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       19,203
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       15,206
+NON ZERO ELEMENTS        48,011
 
 
-GENERATION TIME      =        0.047 SECONDS      8 MB  25.1.3 r4e34d435fbd WEX-WEI
+GENERATION TIME      =        0.047 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
 
 
-EXECUTION TIME       =        0.047 SECONDS      8 MB  25.1.3 r4e34d435fbd WEX-WEI
+EXECUTION TIME       =        0.063 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
                L O O P S         Loop_Probability 1
                                  LineInvest 1
 
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 6
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 6
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
-Solution Report     SOLVE Redispatch Using LP From line 597
+Solution Report     SOLVE Redispatch Using LP From line 608
 
 
                S O L V E      S U M M A R Y
 
      MODEL   Redispatch          OBJECTIVE  costRedispatch
      TYPE    LP                  DIRECTION  MINIMIZE
-     SOLVER  GUROBI              FROM LINE  597
+     SOLVER  GUROBI              FROM LINE  608
 
 **** SOLVER STATUS     1 Normal Completion         
-**** MODEL STATUS      14 No Solution Returned     
-**** OBJECTIVE VALUE               NA
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE           142150.9849
 
- RESOURCE USAGE, LIMIT          0.006     36000.000
+ RESOURCE USAGE, LIMIT          0.023     36000.000
  ITERATION COUNT, LIMIT         0    2000000000
 Gurobi link license.
 Gurobi library version 8.1.0
 Space for names approximately 0.74 Mb
-LP status(4): Model was proven to be either infeasible or unbounded.
-***
-*** Gurobi reports the model to be either infeasible or unbounded.
-*** Use option 'rerun 1' in a GAMS/Gurobi option file
-*** to determine the primal solution status.
-***
+LP status(2): Model was solved to optimality (subject to tolerances).
 
-No solution returned
-GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/12/19 14:57:52 Page 7
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 7
 G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
 E x e c u t i o n
 
 
-----    613 PARAMETER Test                 =        0.000  
-**** Exec Error at line 675: division by zero (0)
-**** Exec Error at line 712: division by zero (0)
-**** Exec Error at line 713: division by zero (0)
-**** Exec Error at line 714: division by zero (0)
-**** Exec Error at line 715: division by zero (0)
-**** Exec Error at line 725: division by zero (0)
-**** Exec Error at line 726: division by zero (0)
-**** Exec Error at line 727: division by zero (0)
-**** Exec Error at line 728: division by zero (0)
-
-**** SOLVE from line 553 SKIPPED, EXECERROR = 9
-
-**** SOLVE from line 597 SKIPPED, EXECERROR = 9
-
-----    613 PARAMETER Test                 =      250.000  
-
-**** SOLVE from line 553 SKIPPED, EXECERROR = 9
-
-**** SOLVE from line 597 SKIPPED, EXECERROR = 9
-
-----    613 PARAMETER Test                 =      500.000  
-
-**** SOLVE from line 553 SKIPPED, EXECERROR = 9
-
-**** SOLVE from line 597 SKIPPED, EXECERROR = 9
-
-----    613 PARAMETER Test                 =        0.000  
-
-**** SOLVE from line 553 SKIPPED, EXECERROR = 9
-
-**** SOLVE from line 597 SKIPPED, EXECERROR = 9
-
-----    613 PARAMETER Test                 =      250.000  
-
-**** SOLVE from line 553 SKIPPED, EXECERROR = 9
-
-**** SOLVE from line 597 SKIPPED, EXECERROR = 9
-
-----    613 PARAMETER Test                 =      500.000  
+----    624 PARAMETER Test                 =   129594.217  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
 
 
-EXECUTION TIME       =        0.047 SECONDS      4 MB  25.1.3 r4e34d435fbd WEX-WEI
+LOOPS                           Loop_Probability   1
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS        9,202
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        8,411
+NON ZERO ELEMENTS        25,621     NON LINEAR N-Z          1,600
+DERIVATIVE POOL              20     CONSTANT POOL             189
+CODE LENGTH              11,209
+
+
+GENERATION TIME      =        0.031 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.047 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 1
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1529094.8634
+
+ RESOURCE USAGE, LIMIT          1.151     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.38 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                           400  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   1
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       19,203
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       15,206
+NON ZERO ELEMENTS        48,011
+
+
+GENERATION TIME      =        0.046 SECONDS     11 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.046 SECONDS     11 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 1
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE           138163.5849
+
+ RESOURCE USAGE, LIMIT          0.267     36000.000
+ ITERATION COUNT, LIMIT      9590    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.74 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =   125669.817  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 13
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   1
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS        9,202
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        8,411
+NON ZERO ELEMENTS        25,621     NON LINEAR N-Z          1,600
+DERIVATIVE POOL              20     CONSTANT POOL             189
+CODE LENGTH              11,209
+
+
+GENERATION TIME      =        0.031 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.031 SECONDS      9 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 1
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 14
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1529094.8634
+
+ RESOURCE USAGE, LIMIT          1.203     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.38 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                           400  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 15
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   1
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       19,203
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       15,206
+NON ZERO ELEMENTS        48,011
+
+
+GENERATION TIME      =        0.047 SECONDS     11 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.047 SECONDS     11 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 1
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 16
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE           134176.1849
+
+ RESOURCE USAGE, LIMIT          0.244     36000.000
+ ITERATION COUNT, LIMIT      9531    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.74 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 17
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =   121745.417  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 18
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             190
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.046 SECONDS     10 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.046 SECONDS     10 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 19
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          1528073.7205
+
+ RESOURCE USAGE, LIMIT          1.138     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1004  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 20
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.062 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 21
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              926.2688
+
+ RESOURCE USAGE, LIMIT          0.648     36000.000
+ ITERATION COUNT, LIMIT     16482    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                           649  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 22
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      841.541  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 23
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             190
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.031 SECONDS     12 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     12 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 24
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528109.0846
+
+ RESOURCE USAGE, LIMIT          3.588     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1731  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 25
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.078 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 26
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE             1407.5739
+
+ RESOURCE USAGE, LIMIT          0.396     36000.000
+ ITERATION COUNT, LIMIT     13943    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                           209  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 27
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =     1097.746  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 28
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             190
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 29
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          1528143.0675
+
+ RESOURCE USAGE, LIMIT          2.835     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 30
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   2
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.063 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 2
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 31
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE             1846.3689
+
+ RESOURCE USAGE, LIMIT          0.434     36000.000
+ ITERATION COUNT, LIMIT     15895    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 32
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =     1314.512  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 33
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.062 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 34
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528015.7849
+
+ RESOURCE USAGE, LIMIT          2.610     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          2933  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 35
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.063 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 36
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              283.0989
+
+ RESOURCE USAGE, LIMIT          1.073     36000.000
+ ITERATION COUNT, LIMIT     14601    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                          1312  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 37
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      231.017  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 38
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 39
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528051.6506
+
+ RESOURCE USAGE, LIMIT          3.191     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          6275  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 40
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.062 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 41
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              757.7260
+
+ RESOURCE USAGE, LIMIT          0.409     36000.000
+ ITERATION COUNT, LIMIT     13721    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                          3843  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 42
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      480.796  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 43
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.062 SECONDS     13 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 44
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          1528071.1122
+
+ RESOURCE USAGE, LIMIT          2.318     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 45
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   3
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.094 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.110 SECONDS     16 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 3
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 46
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE             1234.8649
+
+ RESOURCE USAGE, LIMIT          0.504     36000.000
+ ITERATION COUNT, LIMIT     16400    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 47
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      731.933  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 48
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 49
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1527989.6220
+
+ RESOURCE USAGE, LIMIT          2.348     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 50
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.078 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.094 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 51
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              142.3822
+
+ RESOURCE USAGE, LIMIT          1.031     36000.000
+ ITERATION COUNT, LIMIT     15148    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             1  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 52
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      115.646  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 53
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.062 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 54
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          1528027.5796
+
+ RESOURCE USAGE, LIMIT          2.410     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          4677  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 55
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.078 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.094 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 56
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              616.4723
+
+ RESOURCE USAGE, LIMIT          1.180     36000.000
+ ITERATION COUNT, LIMIT      8665    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                          2914  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 57
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      365.486  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 58
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.063 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 59
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528055.2687
+
+ RESOURCE USAGE, LIMIT          3.249     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 60
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   4
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.094 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.094 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 4
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 61
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE             1080.2036
+
+ RESOURCE USAGE, LIMIT          0.364     36000.000
+ ITERATION COUNT, LIMIT     12832    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             2  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 62
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      605.333  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 63
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.062 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.093 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 64
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1527977.4857
+
+ RESOURCE USAGE, LIMIT          3.994     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          2847  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 65
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   1
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.109 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.141 SECONDS     17 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 1
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 66
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE               75.5596
+
+ RESOURCE USAGE, LIMIT          0.329     36000.000
+ ITERATION COUNT, LIMIT      9756    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                          1356  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 67
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =       61.675  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 68
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.047 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.078 SECONDS     14 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 69
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528010.3420
+
+ RESOURCE USAGE, LIMIT          5.478     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 70
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.140 SECONDS     18 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.156 SECONDS     18 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 71
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE              549.8908
+
+ RESOURCE USAGE, LIMIT          2.317     36000.000
+ ITERATION COUNT, LIMIT      9438    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             1  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 72
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      311.002  
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 73
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 563
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           8     SINGLE EQUATIONS       10,003
+BLOCKS OF VARIABLES           7     SINGLE VARIABLES        9,212
+NON ZERO ELEMENTS        38,432     NON LINEAR N-Z          3,200
+DERIVATIVE POOL              20     CONSTANT POOL             191
+CODE LENGTH              22,415
+
+
+GENERATION TIME      =        0.078 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.110 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 74
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 563
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  563
+
+**** SOLVER STATUS     4 Terminated By Solver      
+**** MODEL STATUS      7 Feasible Solution         
+**** OBJECTIVE VALUE          1528046.2067
+
+ RESOURCE USAGE, LIMIT          4.051     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.42 Mb
+Registering primal dual solution. This turns off presolve!
+In case of poor performance consider turning off primal dual solution
+registration via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+QCP status(13): Unable to satisfy optimality tolerances; a sub-optimal solution is available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+                          1200  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 75
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 608
+
+
+LOOPS                           Loop_Probability   5
+                                LineInvest   3
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS       28,004
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES       26,407
+NON ZERO ELEMENTS        76,016
+
+
+GENERATION TIME      =        0.094 SECONDS     18 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.110 SECONDS     18 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         Loop_Probability 5
+                                 LineInvest 3
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 76
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 608
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  608
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE             1024.6600
+
+ RESOURCE USAGE, LIMIT          0.389     36000.000
+ ITERATION COUNT, LIMIT     12071    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 1.18 Mb
+Registering advanced basis. This turns off presolve!
+In case of poor performance consider turning off advanced basis registration
+via GAMS option BRatio=1 or GAMS/Gurobi option UseBasis=0.
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             1  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/13/19 16:59:48 Page 77
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    624 PARAMETER Test                 =      560.834  
+
+
+EXECUTION TIME       =        0.063 SECONDS     15 MB  25.1.3 r4e34d435fbd WEX-WEI
 
 
 USER: Small MUD - 5 User License                     S181102:0656AO-WIN
@@ -1113,5 +2703,3 @@ USER: Small MUD - 5 User License                     S181102:0656AO-WIN
 
 Input      C:\Users\ba62very\MyGit\risk-aversion\GAMS\2Nodes.gms
 Output     C:\Users\ba62very\MyGit\risk-aversion\GAMS\2Nodes.lst
-
-**** USER ERROR(S) ENCOUNTERED
