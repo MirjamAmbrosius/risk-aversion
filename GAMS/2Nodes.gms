@@ -30,9 +30,9 @@ option  optcr = 0.0001
 $set resIntegration off
 
 Sets
-         L "indices for power lines"     / 1 * 3 /
-         LineInvest                      / 1 * 3 /
-         Loop_Probability                / 1 * 5 /
+         L "indices for power lines"     / 1 * 10 /
+         LineInvest                      / 1 * 10 /
+         Loop_Probability                / 1 * 11 /
          results                         / "CS", "PS", "CR", "ALL"
                                            "RD_G", "RD_B","RD_L", "SP_G", "SP_P"
                                            "C_L", "C_B" , "C_G",
@@ -45,6 +45,8 @@ Sets
 $include Input_2Nodes.gms
 $include Parameters_2Nodes.gms
 $include model-risk-aversion.gms
+display S(S_trans,S_co2,S_dloc,S_dlev);
+$stop
 
 *** read gurobi.opt
 *  Spotmarket.OptFile = 1 ;

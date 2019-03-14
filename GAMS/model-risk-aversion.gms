@@ -9,7 +9,7 @@
 
 * Spot Market
   f_sp(S,L,T)            "trade flow in spot market"
-  VAR_sp                "value at risk spot market"
+  VAR_sp                 "value at risk spot market"
 * Redispatch
   f_rd(S,L,T)            "transmission flows redispatch"
   angle(S,N,T)           "phase angle in redispatch model"
