@@ -1,0 +1,745 @@
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1   
+   2  ***--------------------------------------------------------------------------***
+   3  ***                             GENERAL OPTIONS                              ***
+   4  ***--------------------------------------------------------------------------***
+   5   
+   6  option  optcr = 0.0001
+   7          limrow = 0,
+   8  *equations listed per block */
+   9          limcol = 0
+  10  *variables listed per block */
+  11          solprint = off,
+  12  *solver's solution output printed */
+  13          sysout = off,
+  14  *define standard solver
+  15          QCP = Gurobi,
+  16          LP = Gurobi
+  17  ;
+  18   
+  19  ***--------------------------------------------------------------------------***
+  20  ***            OPTIONS FOR DIFFERENT SCENARIOS & LINE INVESTMENT             ***
+  21  ***--------------------------------------------------------------------------***
+  22   
+  23  *** Choose number of zones (one, two)
+  25   
+  26  Sets
+  27           L "indices for power lines"     / 2 * 10 /
+  28           LineInvest                      / 2  /
+  29   ;
+  30   
+  31  ***--------------------------------------------------------------------------***
+  32  ***             LOAD DATA AND SETUP FOR LOOP WITH PROBABILITIES              ***
+  33  ***--------------------------------------------------------------------------***
+  34   
+  35   
+INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\input-risk-aversion.gms
+  37  *** General Sets ***
+  38   
+  39    Sets
+  40    T    "indices for times" / 1 *  5 /
+  41    N    "indices for nodes"       / 1 *   2 /
+  42    G    "indices for generators"  / 1 *   8 /
+  43    D(N) "indices for consumers"   / 1 *   2 /
+  44    Z    "indices for zones"       / 1 *   2 /
+  45    B    "indices for backup"      / 1 *   2 /
+  46    S_trans "indices for transmission cost scenarios" /low_trans, high_trans/
+  47    S_co2 "indices for CO2 cost scenarios"    /low_co2, high_co2/
+  48    S_dloc "indices for demand locational distribution scenarios"  /south, north/
+  49    S_dlev    "indices for demand level scenarios"    /low_dlev, medium_dlev, high_dlev/
+  50    ;
+  51   
+  52    Alias (n,nn) ;
+  53   
+  54    Scalars
+  55    M              bigM                                  / 10000    /
+  56    epsilon        elacticity of demand                  / -0.10 /
+  57    Year           Hours per year                        /  8760    /
+  58    buFixInv       Annuity per 1 MW backup capacity      / 32000    /
+  59    DSM            Load Shedding costs                   /  3000    /
+  60  *DSM: do we use / need that?
+  61    L_step         Capacity steps for lines              /     0.01 /
+  62    ;
+  63   
+  64  *** Line Parameters ***
+  65   
+  66    Parameters
+  67    lineIsNew(L)   "candidate line"
+  68    lineGamma(L)   "susceptance"
+  69    lineUB(L)      "thermal capacity"
+  70    lineStart(L)   "start node"
+  71    lineEnd(L)     "end node"
+  72    lineFixInv(L, S_trans)  "line investment cost (candidate lines)"
+  73    lineInter(L) "line is interzone link"
+  74    L_cost(S_trans)   "Cost for 0.01 line capacity"           / low_trans 250, high_trans 350 /
+  75    buVarInv(S_co2)       "Variable cost per MWh for backup"      /low_co2 68, high_co2 79/
+  76   
+  77  *** Generator Parameters ***
+  78   
+  79    genIsRES(G)    "renewable generator"                   / 7 1, 8 1 /
+  80    genAtNode(G)   "location (node)"                       / 1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2 /;
+  81    Table
+  82    genVarInv(G,S_co2)   "variable cost"               low_co2   high_co2
+  83                                                  1       35      51
+  84                                                  2       43      50
+  85                                                  3       68      79
+  86                                                  4       38      54
+  87                                                  5       43      50
+  88                                                  6       68      79
+  89                                                  7       0       0
+  90                                                  8       0       0
+  91    ;
+  92   
+  93    Parameters
+  94    genFixInv(G)   "investment cost"                       / 1 93000, 2 58000, 3 32000, 4 93000, 5 58000, 6 32000, 7 78000, 8 93000 /
+  95    buAtNode(B)    "location (node) of backup"             / 1 1, 2 2 /
+  96    prob_trans(S_trans) "probability for transmission cost scenario" /low_trans 0.5, high_trans 0.5/
+  97    prob_co2(S_co2) "probability for CO2 cost scenario"  /low_co2 0.5, high_co2 0.5/
+  98    prob_dloc(S_dloc) "probability for demand location scenario" /south 0.5, north 0.5/
+  99    prob_dlev(S_dlev) "probability for demand level scenario" /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
+ 100    avail(T,G)     "availability of generators"
+ 101   
+ 102   
+ 103  *** Demand Parameters ***
+ 104    consAtNode(D)   "location (node)"                      / 1 1, 2 2 /;
+ 105    Table
+ 106    qPeak(D, S_dloc) "peak consumption at consumer D"         south   north
+ 107                                                          1   0.3     0.7
+ 108                                                          2   0.7     0.3;
+ 109   
+ 110   
+ 111    Parameters
+ 112    consObjB(D,T,S_dlev,S_dloc)   "slope demand function"
+ 113    consObjA(D,T,S_dlev,S_dloc)   "intercept demand function"
+ 114    periodScale(T)  "occurence of scenarios"
+ 115    dRef(T,S_dlev) "reference demand per season"
+ 116    pRef(T)         "reference price"
+ 117   
+ 118   
+ 119  *** Risk Aversion Parameters ***
+ 120    weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"   /0/
+ 121    weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"    /0/
+ 122    percentile      "lower percentile of welfare function that is considered to be the worst case"                /0.2/
+ 123    ;
+ 124   
+ 125    lineIsNew(L)     = 1 ;
+ 126    lineGamma(L)     = 1 ;
+ 127    lineUB(L)        = ( L.Val - 1 ) * L_step ;
+ 128    lineStart(L)     = 1 ;
+ 129    lineEnd(L)       = 2 ;
+ 130    lineFixInv(L, S_trans)    = L_cost(S_trans) * L_step / 0.01 * ( L.Val - 1 ) ;
+ 131   
+ 133    lineInter(L) = 1
+ 134    Parameters
+ 135    ConsInZone(D) "consumer in zone" /1 1, 2 2/
+ 136    GenInZone(G) "generation in zone"  /1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2/
+ 137    NodeInZone(N) /1 1, 2 2/
+ 139    ;
+ 140   
+ 141  *** Read.csv Input Data
+ 142   
+GDXIN   C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+--- LOAD  pRef = 1:pRef
+ 147   
+GDXIN   C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+--- LOAD  dRef = 1:dRef
+ 152   
+GDXIN   C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+--- LOAD  periodScale = 1:periodScale
+ 157   
+GDXIN   C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+--- LOAD  avail = 1:avail
+ 162   
+ 163   
+ 164  *** Demand Curves ***
+ 165   
+ 166    consObjB(D,T,S_dlev,S_dloc) = (-1) * pRef(T) / ( dRef(T, S_dlev) * qPeak(D, S_dloc) * epsilon )      ;
+ 167    consObjA(D,T,S_dlev,S_dloc) =  pRef(T) + consObjB(D,T,S_dlev,S_dloc) * dRef(T, S_dlev) * qPeak(D, S_dloc)          ;
+ 168   
+ 169   
+INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\parameters-risk-aversion.gms
+ 171    Parameters
+ 172  *investment
+ 173    SP_CAP_G(G)            "investment decision in conv. generation capacity of spot market level"
+ 174    RD_CAP_B(B)             "investment of backup generator B"
+ 175  *generation and demand
+ 176    SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T)          "demand Spot"
+ 177    SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T)        "generation amount Spot"
+ 178  *transmission
+ 179    lineB(L)
+ 180    SP_FLOW(S_trans,S_co2,S_dloc,S_dlev,L,T)
+ 181    SP_CAP_L(L)
+ 182    RD_FLOW(S_trans,S_co2,S_dloc,S_dlev,L,T)         "flow through line L in scenario s and time t after redispatch"
+ 183   
+      *welfare
+        wf_sp                  "spot market welfare"
+        wf_sc_sp(S)            "spot market welfare for scenario s"
+        wf_SP_Test             "TEST"
+        wf_sc_all(S)           "final welfare for scenario s"
+        wf_all                 "final welfare"
+        wf_SP_d(S,D)
+      *  nodal_welfare(S,N)     "welfare for node d in scenario s"
+       
+      *costs
+        ct_RD_TEST
+      * COST_FC_G
+        Cost_sc_rd_g(S)
+        Cost_sc_rd_b(S)
+        Cost_sc_rd_l(S)
+        Cost_sc_sp_g(S)
+        Cost_fc_l
+        Cost_fc_b
+        Cost_fc_g
+        Cost_sc_cr(S)          "Congestion rent by scenario"
+      *  genCost                "cost of generation investment"
+      *  buCost
+        rediCost(S)            "network costs and redispatch cost in scenario s"
+        totalRediCost          "total redispatch cost for all scenarios"
+        rediGenCost            "cost for generation redispatch in scenario s"
+        rediBuCost             "variable cost for backup capacity in scenario s"
+      *  Demand
+        RD_GEN_G(S,G,T)        "generation after Redispatch"
+        RD_GEN_B(S,B,T)        "generation of backup capacity b in scenario s and time t"
+        RD_DEM_L(S,D,T)        "load shedding"
+      *  averageDemand(S,D,T)   "total redispatched demand of consumer d over all periods and scenarios"
+       
+      *prices
+        priceD_Spot(S,D,T)     "price for consumer d in period t in scenario s"
+        priceG_Spot(S,G,T)     "price for producer g in period t in scenario s"
+        Price_SP_nodalAvg(S,N)
+        Price_RD_Markup(S)
+        Price_FI_nodal(S,N)
+       
+      *  avgPriceSpot(S)        "average price in scenario s"
+      *  nodalAvgPriceSpot(S,N) "average price for node n in scenario s"
+      *  totalAvgPriceSpot      "weighted average spot price over all scenarios"
+       
+      *  networkRevenues(S)     "network revenues in scenario s"
+      *  networkFee(S)          "network fee in scenario s"
+      *utilization
+      *  avgGenUtilization(S,G) "average utilization of generator g in scenario s"
+      *  avgLineUtilization(S)  "average utilization of transmission capacity in scenario s"
+      *  avgBuUtilization(S,B)  "average utilization of backup b in scenario s"
+       
+       
+        Loop_Probability_results(Loop_Probability,S);
+       
+        Parameters
+        Loop_welfare_sp(Loop_Probability, LineInvest)          "spot market welfare"
+        Loop_welfare_sp_sc(Loop_Probability,LineInvest,S)      "spot market welfare for scenario s"
+        Loop_welfare_all_sc(Loop_Probability,LineInvest,S)     "welfare for scenario s"
+        Loop_welfare_all(Loop_Probability,LineInvest)          "total welfare"
+        Loop_welfare_sp_TEST(Loop_Probability, LineInvest)
+        Loop_welfare_sp_sc_d(Loop_Probability, LineInvest,S,D)
+       
+        Loop_genInv(Loop_Probability, LineInvest, G)           "generation investment"
+        Loop_lineInv(Loop_Probability,LineInvest)              "cost of line investement"
+       
+        Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T)     "price for consumer d in period t in scenario s"
+        Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T)     "price for generators g in period t in scenario s"
+        Loop_price_SP_nodal(Loop_Probability,LineInvest,S,N)
+        Loop_price_RD_markup(Loop_Probability,LineInvest,S,results)
+        Loop_price_Final(Loop_Probability,LineInvest,S,N)
+       
+        Loop_results_rents_A(Loop_Probability,LineInvest,S,results)
+        Loop_results_rents_N(Loop_Probability,LineInvest,S,N,results)
+        Loop_rents_CS(Loop_Probability,LineInvest,D,S)
+        Loop_rents_PS(Loop_Probability,LineInvest,G,S)
+        Loop_profits_PS(Loop_Probability,LineInvest,G,S)
+       
+        Loop_redispatch_TEST(Loop_Probability, LineInvest)
+        Loop_redispatch(Loop_Probability, LineInvest)
+        Loop_redispatch_sc(Loop_Probability, LineInvest,s)
+       
+        Loop_demand(Loop_Probability, LineInvest,S,N)
+        Loop_nodal(Loop_Probability, LineInvest,S,N,results)
+       
+       
+        Loop_nodal_welfare(Loop_Probability, LineInvest, S,N)  "welfare for node d in scenario s"
+        Loop_avgPriceSpot(Loop_Probability,LineInvest,S)       "average price in scenario s"
+        Loop_nodalAvgPriceSpot(Loop_Probability,LineInvest,S,N)"average price for node n in scenario s"
+       
+        Loop_genCost(Loop_Probability,LineInvest)              "cost of generation investment"
+        Loop_buCost(Loop_Probability,LineInvest)               "cost of generation investment"
+       
+       
+        Loop_buInv(Loop_Probability, LineInvest, B)            "generation investment backup capacity"
+      *  Loop_resInv(Loop_Probability, LineInvest, R)           "generation investment RES capacity"
+        Loop_totalAvgPriceSpot(Loop_Probability, LineInvest)   "weighted average spot price over all scenarios"
+        Loop_demand(Loop_Probability, LineInvest,S,D,T)        "redispatched demand of consumer D"
+        Loop_avgPriceCons(Loop_Probability, LineInvest, S,D)   "weighted average price at consumer d in scenario s over all periods"
+       
+       
+        Loop_rediCost(Loop_Probability, LineInvest, S)         "redispatch cost in scenario s"
+        Loop_totalRediCost(Loop_Probability, LineInvest)       "total redispatch cost in all scenarios"
+        Loop_rediGenCost(Loop_Probability, LineInvest, S)      "cost for generation redispatch in scenario s"
+        Loop_rediBuCost(Loop_Probability, LineInvest, S)       "variable cost for backup capacity in scenario s"
+       
+       
+        Loop_flowFinal(Loop_Probability, LineInvest, S,L,T)            "flow through line L in scenario s and time t after redispatch"
+        Loop_generationBU(Loop_Probability, LineInvest,S,B,T)          "generation of backup capacity b in scenario s and time t"
+        Loop_generation(Loop_Probability, LineInvest,S,G,T)            "generation of generator g in scenario s and time t"
+        Loop_totalLineCapacity(Loop_Probability, LineInvest)           "total line capacity"
+        Loop_avgGenUtilization(Loop_Probability, LineInvest, S,G)      "average utilization of generator g in scenario s"
+        Loop_avgLineUtilization(Loop_Probability, LineInvest,S)        "average utilization of transmission capacity in scenario s"
+        Loop_avgBuUtilization(Loop_Probability, LineInvest, S,B)       "average utilization of backup b in scenario s"
+        Loop_networkFee(Loop_Probability, LineInvest, S)               "network fee in scenario s"
+        Loop_networkRev(Loop_Probability,LineInvest,S)                 "Congestion rents"
+        Loop_results_rents_N(Loop_Probability,LineInvest,S,N,results)
+       
+        Loop_price_comp(Loop_Probability,LineInvest,N,results)
+        Loop_RD_comp(Loop_Probability,LineInvest,N,results)
+        Loop_CR_comp(Loop_Probability,LineInvest,N,S)
+        Loop_results_price_N(Loop_Probability,LineInvest,S,N,results)
+        Loop_results_price_A(Loop_Probability,LineInvest,S,results)
+ 307  ;
+INCLUDE    C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
+ 309  ***--------------------------------------------------------------------------***
+ 310  ***                           DEFINITION of VARIABLES                        ***
+ 311  ***--------------------------------------------------------------------------***
+ 312   
+ 313    Variables
+ 314  * objective values
+ 315    welfareSpot            "welfare in spot market"
+ 316    costRedispatch         "cost at redispatch level"
+ 317  * Spot Market
+ 318    f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T) "trade flow in spot market"
+ 319    VAR_sp                 "value at risk spot market"
+ 320  * Redispatch
+ 321    f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T)            "transmission flows redispatch"
+ 322    angle(S_trans,S_co2,S_dloc,S_dlev,N,T)           "phase angle in redispatch model"
+ 323    VAR_rd                "value at risk redispatch"
+ 324    CVAR                   "conditional value at risk"
+ 325    ;
+ 326   
+ 327    Positive Variables
+ 328  * Spot Market
+ 329    d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T)            "demand spot market"
+ 330    g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T)            "generation amount spot market"
+ 331    ig_sp(G)                                         "installed capacity of generators in spot market"
+ 332  * Risk Aversion
+ 333    eta_sp(S_trans,S_co2,S_dloc,S_dlev)              "auxiliary variable to model CVAR in spot market stage"
+ 334   
+ 335  * Redispatch
+ 336    d_rd(S_trans,S_co2,S_dloc,S_dlev,D,T)            "demand redispatcht"
+ 337    g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T)            "generation amount redispatch"
+ 338    gb_rd(S_trans,S_co2,S_dloc,S_dlev,B,T)           "generation backup capacity redispatch"
+ 339    ib_rd(B)                                         "investment in backup capacity redispatch"
+ 340    g_n_rd(S_trans,S_co2,S_dloc,S_dlev,G,T)          "negative generation redispatch"
+ 341    g_p_rd(S_trans,S_co2,S_dloc,S_dlev,G,T)          "positive generation redispatch"
+ 342    ls_rd(S_trans,S_co2,S_dloc,S_dlev,D,T)           "load shedding redispatch"
+ 343  * Risk Aversion
+ 344    eta_rd(S_trans,S_co2,S_dloc,S_dlev)              "auxiliary variable to model CVAR in redispatch stage"
+ 345    ;
+ 346   
+ 347  *  Binary Variable
+ 348  *  lineB(L)               "line is built?"
+ 349  *  ;
+ 350   
+ 351  ***--------------------------------------------------------------------------***
+ 352  ***                          SPOT MARKET MODEL                               ***
+ 353  ***--------------------------------------------------------------------------***
+ 354   
+ 355  *** Objective function
+ 356    Equation welfSpot;
+ 357    welfSpot..         welfareSpot =e=
+ 358  *  (1-weight_sp)*
+ 359                                          sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+ 360                                        * ( sum((D,T), periodScale(T)*( consObjA(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T)
+ 361                                        - 0.5 * consObjB(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) ) )
+ 362                                        - sum((G,T), genVarInv(G,S_co2) * g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T) * periodScale(T) ) ) ) * Year
+ 363                                        - sum(G, genFixInv(G) * ig_sp(G) )
+ 364  *                                      + weight_sp*(VAR_sp - (1/(1-percentile)
+ 365  *                                      *sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+ 366  *                                      * eta_sp(S_trans,S_co2,S_dloc,S_dlev))))
+ 367  ;
+ 368   
+ 369  *** Conditional Value at Risk Restrictions ***
+ 370    Equation CVARSpot;
+ 371    CVARSpot(S_trans,S_co2,S_dloc,S_dlev)..
+ 372          VAR_sp - (( sum((D,T), periodScale(T)*( consObjA(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T)
+ 373                  - 0.5 * consObjB(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) ) )
+ 374                  - sum((G,T), genVarInv(G,S_co2) * g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T) * periodScale(T) ) )  * Year
+ 375                  - sum(G, genFixInv(G) * ig_sp(G))) =l=eta_sp(S_trans,S_co2,S_dloc,S_dlev)
+ 376                  ;
+ 377   
+ 378   
+ 379  *** Zonal First Kirchhoffs Law
+ 380   
+ 381    Equation ZFKL;
+ 382    ZFKL(S_trans,S_co2,S_dloc,S_dlev,Z,T)..
+ 383           sum(D$(consInZone(D) = Z.val), d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T)) =e=
+ 384                       sum(G$(sum(N$(genAtNode(G) = N.val), NodeInZone(N)) = Z.val), g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T) )
+ 385                     - sum(L$(sum(N$(lineStart(L) = N.val), NodeInZone(N)) = Z.val and lineInter(L) = 1), f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T))
+ 386                     + sum(L$(sum(N$(lineEnd(L) = N.val),   NodeInZone(N)) = Z.val and lineInter(L) = 1), f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T)) ;
+ 387   
+ 388   
+ 389  *** Market Coupling Flow Restrictions
+ 390   
+ 391    Equation MCF1;
+ 392    MCF1(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineInter(L) = 1 and lineIsNew(L) = 0)..   f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T) =l= lineUB(L);
+ 393    Equation MCF2;
+ 394    MCF2(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineInter(L) = 1 and lineIsNew(L) = 0).. - lineUB(L)=l= f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T);
+ 395    Equation MCF3;
+ 396    MCF3(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineInter(L) = 1 and lineIsNew(L) = 1)..   f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T) =l= lineB(L) * lineUB(L);
+ 397    Equation MCF4;
+ 398    MCF4(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineInter(L) = 1 and lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_sp(S_trans,S_co2,S_dloc,S_dlev,L,T);
+ 399   
+ 400   
+ 401   
+ 402  ***Generation Capacity Limits
+ 403   
+ 404    Equation GCLSpot ;
+ 405    GCLSpot(S_trans,S_co2,S_dloc,S_dlev,G,T)..  g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T) =l= avail(T,G) * ig_sp(G) ;
+ 406   
+ 407   
+ 408  ***--------------------------------------------------------------------------***
+ 409  ***                     NETWORK- and REDISPATCH LEVEL                        ***
+ 410  ***--------------------------------------------------------------------------***
+ 411   
+ 412    Equation costRed ;
+ 413    costRed..         costRedispatch =e= (1-weight_rd)
+ 414                                             *sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+ 415                                             * ( sum((G,T), genVarInv(G,S_co2) * ( g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T) - SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T) )
+ 416                                             * periodScale(T) ) * YEAR
+ 417                                             + sum((B,T), buVarInv(S_co2) * gb_rd(S_trans,S_co2,S_dloc,S_dlev,B,T) * periodScale(T) ) * YEAR )
+ 418                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L,S_trans) * lineB(L)))
+ 419                                             + sum(B, buFixInv * ib_rd(B) )
+ 420                                             + weight_rd*CVAR
+ 421                                             ;
+ 422   
+ 423   
+ 424  *** Conditional Value at Risk Restrictions ***
+ 425   
+ 426    Equation CVARRed1;
+ 427    CVARRed1..
+ 428           (VAR_rd + (1/(1-percentile)
+ 429           *sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+ 430           * eta_rd(S_trans,S_co2,S_dloc,S_dlev)))) =l= CVAR
+ 431   
+ 432    Equation CVARRed2;
+ 433    CVARRed2(S_trans,S_co2,S_dloc,S_dlev)..
+ 434           (sum((G,T), genVarInv(G,S_co2) * ( g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T) - SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T) )
+ 435                                             * periodScale(T) ) * YEAR
+ 436                                             + sum((B,T), buVarInv(S_co2) * gb_rd(S_trans,S_co2,S_dloc,S_dlev,B,T) * periodScale(T) ) * YEAR )
+ 437                                             + sum(B, buFixInv * ib_rd(B) )
+ 438                                             + sum(L$(lineIsNew(L) = 1), lineFixInv(L,S_trans) * lineB(L) ) - VAR_rd
+ 439                                             =l=eta_rd(S_trans,S_co2,S_dloc,S_dlev)
+ 440  ***First Kirchhoffs Law
+ 441   
+ 442    Equation FKL;
+ 443    FKL(S_trans,S_co2,S_dloc,S_dlev,N,T)..   sum(D$(consAtNode(D) = N.val), SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T)) =e=
+ 444                   sum(G$(genAtNode(G)   = N.val), g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T))
+ 445                   + sum(B$(buAtNode(B)  = N.val), gb_rd(S_trans,S_co2,S_dloc,S_dlev,B,T))
+ 446                   + sum(L$(lineEnd(L)   = N.val), f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T))
+ 447                   - sum(L$(lineStart(L) = N.val), f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T)) ;
+ 448   
+ 449  ***Second Kirchhoffs Law
+ 450   
+ 451    Equation SKL1;
+ 452    SKL1(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 0)..
+ 453              f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T) + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S_trans,S_co2,S_dloc,S_dlev,N,T))
+ 454              - sum(N$(lineEnd(L) = N.val), angle(S_trans,S_co2,S_dloc,S_dlev,N,T))) =e= 0;
+ 455    Equation SKL2;
+ 456    SKL2(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 1)..
+ 457              - M * (1 - lineB(L)) =l=  f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T)
+ 458              + lineGamma(L) * (sum(N$(lineStart(L) = N.val), angle(S_trans,S_co2,S_dloc,S_dlev,N,T))
+ 459              - sum(N$(lineEnd(L) = N.val), angle(S_trans,S_co2,S_dloc,S_dlev,N,T)));
+ 460    Equation SKL3;
+ 461    SKL3(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 1)..
+ 462              f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T)
+ 463              + lineGamma(L) * (sum(N$(N.val = lineStart(L)), angle(S_trans,S_co2,S_dloc,S_dlev,N,T))
+ 464              - sum(N$(N.val= lineEnd(L)), angle(S_trans,S_co2,S_dloc,S_dlev,N,T))) =l= M * (1 - lineB(L));
+ 465   
+ 466  ***Voltage Phase Angle
+ 467   
+ 468    Equation VPA;
+ 469    VPA(S_trans,S_co2,S_dloc,S_dlev,N,T)$(N.val = 1).. angle(S_trans,S_co2,S_dloc,S_dlev,N,T) =e= 0;
+ 470   
+ 471  ***Trasmission Flow Limits
+ 472   
+ 473    Equation TFL1;
+ 474    TFL1(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 0)..   f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T) =l= lineUB(L);
+ 475    Equation TFL2;
+ 476    TFL2(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 0).. - lineUB(L) =l= f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T);
+ 477    Equation TFL3;
+ 478    TFL3(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 1)..   f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T) =l= lineB(L) * lineUB(L);
+ 479    Equation TFL4;
+ 480    TFL4(S_trans,S_co2,S_dloc,S_dlev,L,T)$(lineIsNew(L) = 1).. - lineB(L) * lineUB(L) =l= f_rd(S_trans,S_co2,S_dloc,S_dlev,L,T);
+ 481   
+ 482  ***Generation Capacity Limits (Redispatch Level)
+ 483   
+ 484    Equation GCLRed;
+ 485    GCLRed(S_trans,S_co2,S_dloc,S_dlev,G,T).. g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T) =l= avail(T,G) * SP_CAP_G(G) ;
+ 486   
+ 487    Equation GCLBu;
+ 488    GCLBu(S_trans,S_co2,S_dloc,S_dlev,B,T)..  gb_rd(S_trans,S_co2,S_dloc,S_dlev,B,T) =l= ib_rd(B) ;
+ 489   
+ 490  *** Fix Spot Market and Redispatch Quantities
+ 491   
+ 492    Equation fixDem;
+ 493    fixDem(S_trans,S_co2,S_dloc,S_dlev,D,T).. d_rd(S_trans,S_co2,S_dloc,S_dlev,D,T) =e= SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T)
+ 494  *- ls_rd(S,D,T)
+ 495    ;
+ 496   
+ 497    Equation fixGen;
+ 498    fixGen(S_trans,S_co2,S_dloc,S_dlev,G,T)..
+ 499                  g_rd(S_trans,S_co2,S_dloc,S_dlev,G,T) =e= SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T)
+ 500                  + g_p_rd(S_trans,S_co2,S_dloc,S_dlev,G,T) - g_n_rd(S_trans,S_co2,S_dloc,S_dlev,G,T);
+ 501   
+ 502  ***--------------------------------------------------------------------------***
+ 503  ***                           DEFINITION MODELS                              ***
+ 504  ***--------------------------------------------------------------------------***
+ 505   
+ 506    Model Spotmarket
+ 507    / welfspot,
+ 508  *    CVARSpot,
+ 509      ZFKL,
+ 510  *    MCF1,
+ 511  *    MCF2,
+ 512  *    MCF3,
+ 513  *    MCF4,
+ 514  *    GCLSpot
+ 515  /;
+ 516   
+ 517    Model Redispatch
+ 518    / costRed,
+ 519      CVARRed1,
+ 520      CVARRed2,
+ 521      FKL,
+ 522      SKL1,
+ 523      SKL2,
+ 524      SKL3,
+ 525      VPA,
+ 526      TFL1,
+ 527      TFL2,
+ 528      TFL3,
+ 529      TFL4,
+ 530      GCLRed,
+ 531      GCLBu,
+ 532      fixDem,
+ 533      fixGen /;
+ 534   
+ 535  ***--------------------------------------------------------------------------***
+ 536  ***                           END MODEL SECTION                              ***
+ 537  ***--------------------------------------------------------------------------***
+ 538   
+ 539  *** read gurobi.opt
+ 540  *  Spotmarket.OptFile = 1 ;
+ 541  *  RedispatchWelfare.OptFile = 1 ;
+ 542   
+ 543  *** time after which the solver terminates:
+ 544   Spotmarket.reslim = 10000;
+ 545   Redispatch.reslim = 36000;
+ 546   
+ 547   Alias(LineInvest,LineInvest2) ;
+ 548   
+ 549  ***--------------------------------------------------------------------------***
+ 550  ***           START MODEL LOOP FOR PROBABILITIES AND LINE INVEST             ***
+ 551  ***--------------------------------------------------------------------------***
+ 552   
+ 553  Loop(LineInvest,
+ 554   
+ 555     lineB(L) = 1$(LineInvest.val=L.val);
+ 556   
+ 557  ***--------------------------------------------------------------------------***
+ 558  ***                        SOLVE SPOT MARKET MODEL                           ***
+ 559  ***--------------------------------------------------------------------------***
+ 560   
+ 561    option clear= welfareSpot ;
+ 562    option clear= d_sp        ;
+ 563    option clear= g_sp        ;
+ 564    option clear= ig_sp       ;
+ 565    option clear= f_sp        ;
+ 566   
+ 567    SOLVE Spotmarket USING QCP MAXIMIZE welfareSpot ;
+ 568   
+ 569    SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T)   =  d_sp.l(S_trans,S_co2,S_dloc,S_dlev,D,T);
+ 570    SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T) = g_sp.l(S_trans,S_co2,S_dloc,S_dlev,G,T)          ;
+ 571    SP_CAP_G(G)     = ig_sp.l(G)                                                                 ;
+ 572    SP_FLOW(S_trans,S_co2,S_dloc,S_dlev,L,T)  = f_sp.l(S_trans,S_co2,S_dloc,S_dlev,L,T)          ;
+ 573    SP_CAP_L(L)     = lineB(L) * lineUB(L)   ;
+ 574  *  wf_sc_SP(S_trans,S_co2,S_dloc,S_dlev)         = ( sum((D,T), ( consObjA(D,T,S_dlev,S_dloc) * SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T)
+ 575  *                                       - 0.5 * consObjB(D,T,S_dlev,S_dloc) * SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T) * SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T) ) * periodScale(T) )
+ 576  *                                       - sum((G,T), genVarInv(G) * SP_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T) * periodScale(T) ) ) * YEAR
+ 577  *                                       - sum(G, genFixInv(G) * SP_CAP_G(G)) ;
+ 578  *  wf_SP                              = sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+ 579  *                                        * wf_sc_SP(S_trans,S_co2,S_dloc,S_dlev) ) ;
+ 580  *  wf_SP_TEST                         = welfareSpot.l ;
+ 581  *  priceD_Spot(S_trans,S_co2,S_dloc,S_dlev,D,T) = ( consObjA(D,T,S_dlev,S_dloc) - consObjB(D,T,S_dlev,S_dloc) * SP_DEM(S_trans,S_co2,S_dloc,S_dlev,D,T) ) ;
+ 582  *  priceG_Spot(S_trans,S_co2,S_dloc,S_dlev,G,T) = sum(Z$(Z.val = GenInZone(G,S_trans,S_co2,S_dloc,S_dlev)), ZFKL.m(S_trans,S_co2,S_dloc,S_dlev,Z,T) / Year / periodScale(T) / probability(S));
+ 583  *  wf_SP_d(S,D)       $probability(S) = ( sum(T, (consObjA(D,T) * SP_DEM(S,D,T) - 0.5 * consObjB(D,T) * SP_DEM(S,D,T) * SP_DEM(S,D,T)) * periodScale(T) )
+ 584  *                                       - sum(T, priceD_Spot(S,D,T)  * SP_DEM(S,D,T) * periodScale(T) ) ) * YEAR;
+ 585   
+ 586   
+ 587  *  avgPriceSpot(S)    $probability(S) = sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * periodScale(T) );
+ 588  *  totalAvgPriceSpot = sum(S$probability(S),Probability(S)*(sum((D,T), demSpot(S,D,T) * priceSpot(S,D,T) * Year * periodScale(T) ) / sum((D,T), demSpot(S,D,T) * Year * periodScale(T) )));
+ 589   
+        option clear= welfareSpot ;
+        option clear= d_sp        ;
+        option clear= g_sp        ;
+        option clear= ig_sp       ;
+        option clear= f_sp        ;
+ 597   
+ 598  ***--------------------------------------------------------------------------***
+ 599  ***                         SOLVE REDISPATCH MODEL                           ***
+ 600  ***--------------------------------------------------------------------------***
+ 601   
+ 602   
+ 603    option clear = costRedispatch ;
+ 604    option clear = f_rd   ;
+ 605    option clear = angle  ;
+ 606    option clear = d_rd   ;
+ 607    option clear = g_rd   ;
+ 608    option clear = gb_rd  ;
+ 609    option clear = ib_rd  ;
+ 610    option clear = g_n_rd ;
+ 611    option clear = g_p_rd ;
+ 612   
+ 613    SOLVE Redispatch USING LP MINIMIZE costRedispatch ;
+ 614      )
+STOP C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.gms
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Include File Summary
+
+
+   SEQ   GLOBAL TYPE      PARENT   LOCAL  FILENAME
+
+     1        1 INPUT          0       0  C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.gms
+     2       36 INCLUDE        1      36  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\input-risk-aversion.gms
+     3      143 CALL           2     113  .csv2gdx Data/Input_HourlyValues_wind.txt id=pRef Index=1 Value= 3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+     4      144 GDXIN          2     114  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+     5      148 CALL           2     118  .csv2gdx Data/InputRES.txt id=dRef Index=1 Value='(2..4)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+     6      149 GDXIN          2     119  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+     7      153 CALL           2     123  .csv2gdx Data/InputRES.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+     8      154 GDXIN          2     124  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+     9      158 CALL           2     128  .csv2gdx Data/InputRES.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+    10      159 GDXIN          2     129  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\input.gdx
+    11      170 INCLUDE        1      37  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\parameters-risk-aversion.gms
+    12      308 INCLUDE        1      38  .C:\Users\ba62very\MyGit\risk-aversion\GAMS\model-risk-aversion.gms
+    13      615 STOP           1     116  C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.gms
+
+
+COMPILATION TIME     =        0.062 SECONDS      3 MB  25.1.3 r4e34d435fbd WEX-WEI
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Spotmarket Using QCP From line 567
+
+
+LOOPS                           LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           2     SINGLE EQUATIONS          241
+BLOCKS OF VARIABLES           5     SINGLE VARIABLES        2,289
+NON ZERO ELEMENTS         4,329     NON LINEAR N-Z            240
+DERIVATIVE POOL              20     CONSTANT POOL              35
+CODE LENGTH               1,684
+
+
+GENERATION TIME      =        0.016 SECONDS      5 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.016 SECONDS      5 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Spotmarket Using QCP From line 567
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Spotmarket          OBJECTIVE  welfareSpot
+     TYPE    QCP                 DIRECTION  MAXIMIZE
+     SOLVER  GUROBI              FROM LINE  567
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE           252461.2728
+
+ RESOURCE USAGE, LIMIT          0.002     10000.000
+ ITERATION COUNT, LIMIT         0    2000000000
+ EVALUATION ERRORS             NA             0
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.13 Mb
+QP status(2): Model was solved to optimality (subject to tolerances).
+No basis information available.
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE Redispatch Using LP From line 613
+
+
+LOOPS                           LineInvest   2
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          16     SINGLE EQUATIONS        7,106
+BLOCKS OF VARIABLES          12     SINGLE VARIABLES        4,709
+NON ZERO ELEMENTS        18,725
+
+
+GENERATION TIME      =        0.016 SECONDS      5 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+EXECUTION TIME       =        0.016 SECONDS      5 MB  25.1.3 r4e34d435fbd WEX-WEI
+               L O O P S         LineInvest 2
+
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE Redispatch Using LP From line 613
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   Redispatch          OBJECTIVE  costRedispatch
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  GUROBI              FROM LINE  613
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      1 Optimal                   
+**** OBJECTIVE VALUE          3597070.0000
+
+ RESOURCE USAGE, LIMIT          0.012     36000.000
+ ITERATION COUNT, LIMIT         1    2000000000
+Gurobi link license.
+Gurobi library version 8.1.0
+Space for names approximately 0.61 Mb
+LP status(2): Model was solved to optimality (subject to tolerances).
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                            56  PROJECTED
+GAMS 25.1.3  r4e34d435fbd Released Oct 30, 2018 WEX-WEI x86 64bit/MS Windows - 03/26/19 17:05:33 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+EXECUTION TIME       =        0.000 SECONDS      4 MB  25.1.3 r4e34d435fbd WEX-WEI
+
+
+USER: Small MUD - 5 User License                     S181102:0656AO-WIN
+      Friedrich-Alexander-Universitaet Erlangen-Nurnberg, Chair DC12906
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.gms
+Output     C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.lst

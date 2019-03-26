@@ -1,0 +1,17 @@
+[PROJECT]
+
+[RP:MAIN-RISK-AVERSION]
+1=
+
+[MRUFILES]
+1=C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.lst
+
+[OPENWINDOW_1]
+FILE0=C:\Users\ba62very\MyGit\risk-aversion\GAMS\main-risk-aversion.gms
+FILE1=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes.gms
+FILE2=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes.gms
+MAXIM=1
+TOP=50
+LEFT=50
+HEIGHT=400
+WIDTH=400

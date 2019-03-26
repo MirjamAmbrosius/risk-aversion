@@ -1,4 +1,4 @@
-;Occurence;refPrice;refDemLow;refDemMed;refDemHigh
+#id;Occurence;refPrice;low_dlev;medium_dlev;high_dlev
 1;0.000625;250;0.8;1;1.2
 2;0.001875;150;0.76;0.95;1.14
 3;0.0025;100;0.72;0.9;1.08
