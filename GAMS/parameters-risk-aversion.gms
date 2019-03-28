@@ -11,14 +11,23 @@
   SP_CAP_L(L)
   RD_FLOW(S_trans,S_co2,S_dloc,S_dlev,L,T)         "flow through line L in scenario s and time t after redispatch"
 
-$ontext
+
 *welfare
-  wf_sp                  "spot market welfare"
-  wf_sc_sp(S)            "spot market welfare for scenario s"
-  wf_SP_Test             "TEST"
-  wf_sc_all(S)           "final welfare for scenario s"
+  wf_sc_all(S_trans,S_co2,S_dloc,S_dlev)           "final welfare for scenario s"
   wf_all                 "final welfare"
-  wf_SP_d(S,D)
+
+*  Demand
+  RD_GEN_G(S_trans,S_co2,S_dloc,S_dlev,G,T)        "generation after Redispatch"
+  RD_GEN_B(S_trans,S_co2,S_dloc,S_dlev,B,T)        "generation of backup capacity b in scenario s and time t"
+  RD_DEM_L(S_trans,S_co2,S_dloc,S_dlev,D,T)        "load shedding"
+
+* Loops
+  Loop_welfare_all(LineInvest)          "total welfare in each line investment iteration"
+  Loop_welfare_all_sc(LineInvest,S_trans,S_co2,S_dloc,S_dlev)     "welfare for scenario s"
+  Loop_genInv(LineInvest, G)           "generation investment"
+  Loop_lineInv(LineInvest)              "cost of line investement"
+
+$ontext
 *  nodal_welfare(S,N)     "welfare for node d in scenario s"
 
 *costs
@@ -38,10 +47,7 @@ $ontext
   totalRediCost          "total redispatch cost for all scenarios"
   rediGenCost            "cost for generation redispatch in scenario s"
   rediBuCost             "variable cost for backup capacity in scenario s"
-*  Demand
-  RD_GEN_G(S,G,T)        "generation after Redispatch"
-  RD_GEN_B(S,B,T)        "generation of backup capacity b in scenario s and time t"
-  RD_DEM_L(S,D,T)        "load shedding"
+
 *  averageDemand(S,D,T)   "total redispatched demand of consumer d over all periods and scenarios"
 
 *prices
@@ -68,13 +74,12 @@ $ontext
   Parameters
   Loop_welfare_sp(Loop_Probability, LineInvest)          "spot market welfare"
   Loop_welfare_sp_sc(Loop_Probability,LineInvest,S)      "spot market welfare for scenario s"
-  Loop_welfare_all_sc(Loop_Probability,LineInvest,S)     "welfare for scenario s"
+
   Loop_welfare_all(Loop_Probability,LineInvest)          "total welfare"
   Loop_welfare_sp_TEST(Loop_Probability, LineInvest)
   Loop_welfare_sp_sc_d(Loop_Probability, LineInvest,S,D)
 
-  Loop_genInv(Loop_Probability, LineInvest, G)           "generation investment"
-  Loop_lineInv(Loop_Probability,LineInvest)              "cost of line investement"
+
 
   Loop_price_SP_D(Loop_Probability,LineInvest,S,D,T)     "price for consumer d in period t in scenario s"
   Loop_price_SP_G(Loop_Probability,LineInvest,S,G,T)     "price for generators g in period t in scenario s"

@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times" / 1 *  5 /
+  T    "indices for times" / 1 *  400 /
   N    "indices for nodes"       / 1 *   2 /
   G    "indices for generators"  / 1 *   8 /
   D(N) "indices for consumers"   / 1 *   2 /
@@ -60,7 +60,7 @@
   prob_trans(S_trans) "probability for transmission cost scenario" /low_trans 0.5, high_trans 0.5/
   prob_co2(S_co2) "probability for CO2 cost scenario"  /low_co2 0.5, high_co2 0.5/
   prob_dloc(S_dloc) "probability for demand location scenario" /south 0.5, north 0.5/
-  prob_dlev(S_dlev) "probability for demand level scenario" /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
+  prob_dlev(S_dlev) "probability for demand level scenario" /low_dlev 0.3, medium_dlev 0.5, high_dlev 0.2/
   avail(T,G)     "availability of generators"
 
 
@@ -81,8 +81,8 @@
 
 
 *** Risk Aversion Parameters ***
-  weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"   /0/
-  weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 bein the risk-neutral case and 1 being strictly robust)"    /0/
+  weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"   /0/
+  weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"    /0/
   percentile      "lower percentile of welfare function that is considered to be the worst case"                /0.2/
   ;
 
@@ -110,12 +110,12 @@ $endif
 
 *** Read.csv Input Data
 
-$call csv2gdx Data/Input_HourlyValues_wind.txt id=pRef Index=1 Value= 3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_Hourly_RiskAversion.txt id=pRef Index=1 Value= 3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load pRef
 $gdxin
 
-$call csv2gdx Data/InputRES.txt id=dRef Index=1 Value='(2..4)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_long.txt id=dRef Index=1 Value='(4..6)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load dRef
 $gdxin

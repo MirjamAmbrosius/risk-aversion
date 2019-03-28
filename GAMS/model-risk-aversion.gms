@@ -47,15 +47,15 @@
 *** Objective function
   Equation welfSpot;
   welfSpot..         welfareSpot =e=
-*  (1-weight_sp)*
+  (1-weight_sp)*
                                         sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
                                       * ( sum((D,T), periodScale(T)*( consObjA(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T)
                                       - 0.5 * consObjB(D,T,S_dlev,S_dloc) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) * d_sp(S_trans,S_co2,S_dloc,S_dlev,D,T) ) )
                                       - sum((G,T), genVarInv(G,S_co2) * g_sp(S_trans,S_co2,S_dloc,S_dlev,G,T) * periodScale(T) ) ) ) * Year
                                       - sum(G, genFixInv(G) * ig_sp(G) )
-*                                      + weight_sp*(VAR_sp - (1/(1-percentile)
-*                                      *sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
-*                                      * eta_sp(S_trans,S_co2,S_dloc,S_dlev))))
+                                      + weight_sp*(VAR_sp - (1/(1-percentile)
+                                      *sum((S_trans,S_co2,S_dloc,S_dlev), prob_trans(S_trans)*prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)
+                                      * eta_sp(S_trans,S_co2,S_dloc,S_dlev))))
 ;                                     
 
 *** Conditional Value at Risk Restrictions ***
@@ -197,13 +197,13 @@
 
   Model Spotmarket
   / welfspot,
-*    CVARSpot,
+    CVARSpot,
     ZFKL,
-*    MCF1,
-*    MCF2,
-*    MCF3,
-*    MCF4,
-*    GCLSpot
+    MCF1,
+    MCF2,
+    MCF3,
+    MCF4,
+    GCLSpot
 /;
 
   Model Redispatch
