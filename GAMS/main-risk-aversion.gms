@@ -24,8 +24,8 @@ option  optcr = 0.0001
 $set no_of_zones one
 
 Sets
-         L "indices for power lines"     / 1 * 3 /
-         LineInvest                      / 1 * 3 /
+         L "indices for power lines"     / 1 * 11 /
+         LineInvest                      / 1 * 11 /
  ;
 
 ***--------------------------------------------------------------------------***
@@ -144,4 +144,6 @@ Loop(LineInvest,
   Results_welfare_all  = sum(LineInvest$(ord(LineInvest)=maxWelfare), Loop_welfare_all(LineInvest) )        ;
   Results_genInv(G)    = sum(LineInvest$(ord(LineInvest)=maxWelfare), Loop_genInv(LineInvest, G) )         ;
   Results_lineInv      = sum(LineInvest$(ord(LineInvest)=maxWelfare), Loop_lineInv(LineInvest) )           ;
+
+$include OutputWriter.gms
 

@@ -2,7 +2,7 @@ Parameters
 unit "mio" / 1000000 /;
 
 *** Write texfile with results overview
-file solution/Results2Nodes.tex/;
+file solution/ResultsRiskAversion.tex/;
 put solution;
 
 *** Write Header for tex-file ***
@@ -18,7 +18,7 @@ put "\captionsetup{justification=raggedright,singlelinecheck=false}" /;
 put "\usepackage{pgfplotstable}" /;
 put "\usepackage{pgfplots}" /;
 put "\begin{document}" /;
-put "Overview Results "
+put "Overview Results Risk Aversion "
 put system.date /;
 
 *** Write Input Table ***
@@ -43,27 +43,27 @@ put system.date /;
 put "\begin{table}[htb]\caption{Summary of generation capacity}"/;
 put "\begin{tabular}{l|rrrrrr|rr|r|r}" /;
 put "\toprule" /;
-put " P(k=1) &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &    Line   &  Welf   \\" /;
-put "        &      MW &       MW &      MW &      MW &     MW &      MW &      MW &      MW  &    MW     &  TEUR   \\" /;
+put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &    Line   &  Welf   \\" /;
+put "        &      MW &       MW &      MW &      MW &     MW &      MW &      MW &      MW  &    MW     &  MioEUR   \\" /;
 put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &    N-S    &   NS    \\" /;
 put "\midrule" /;
-loop(Loop_Probability,
-  put (1 - (ord(Loop_Probability)-1) * 0.1),
-         "&", Results_genInv(Loop_Probability, "1"),
-         "&", Results_genInv(Loop_Probability, "2"),
-         "&", Results_genInv(Loop_Probability, "3"),
-         "&", Results_genInv(Loop_Probability, "4"),
-         "&", Results_genInv(Loop_Probability, "5"),
-         "&", Results_genInv(Loop_Probability, "6"),
-         "&", Results_genInv(Loop_Probability, "7"),
-         "&", Results_genInv(Loop_Probability, "8"),
-         "&", Results_lineInv(Loop_Probability),
-*         "&", ((Results_welfare_all(Loop_Probability) - Results_welfare_all('1'))/1e3),
+  put         weight_sp,
+         "&", Results_genInv("1"),
+         "&", Results_genInv("2"),
+         "&", Results_genInv("3"),
+         "&", Results_genInv("4"),
+         "&", Results_genInv("5"),
+         "&", Results_genInv("6"),
+         "&", Results_genInv("7"),
+         "&", Results_genInv("8"),
+         "&", Results_lineInv,
+         "&", ((Results_welfare_all)/1000000),
   "\\" /;
-);
 put "\bottomrule" /;
 put "\end{tabular}" /;
 put "\end{table}" /;
+
+$ontext
 
 *** Write Producer Surplus Table ***
 
@@ -90,7 +90,7 @@ put "\end{table}" /;
 
 
 
-$ontext
+
 *** Write Results Welfare Summary Table ***
 
 put "\begin{table}[htb]\caption{Changes in Welfare and Redispatch costs}"/;

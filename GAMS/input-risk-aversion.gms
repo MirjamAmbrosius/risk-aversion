@@ -57,10 +57,10 @@
   Parameters
   genFixInv(G)   "investment cost"                       / 1 93000, 2 58000, 3 32000, 4 93000, 5 58000, 6 32000, 7 78000, 8 93000 /
   buAtNode(B)    "location (node) of backup"             / 1 1, 2 2 /
-  prob_trans(S_trans) "probability for transmission cost scenario" /low_trans 0.5, high_trans 0.5/
-  prob_co2(S_co2) "probability for CO2 cost scenario"  /low_co2 0.5, high_co2 0.5/
-  prob_dloc(S_dloc) "probability for demand location scenario" /south 0.5, north 0.5/
-  prob_dlev(S_dlev) "probability for demand level scenario" /low_dlev 0.3, medium_dlev 0.5, high_dlev 0.2/
+  prob_trans(S_trans) "probability for transmission cost scenario" /low_trans 0.99, high_trans 0.01/
+  prob_co2(S_co2) "probability for CO2 cost scenario"  /low_co2 0.01, high_co2 0.99/
+  prob_dloc(S_dloc) "probability for demand location scenario" /south 0.99, north 0.01/
+  prob_dlev(S_dlev) "probability for demand level scenario" /low_dlev 0.05, medium_dlev 0.9, high_dlev 0.05/
   avail(T,G)     "availability of generators"
 
 
@@ -109,26 +109,28 @@ $endif
   ;
 
 *** Read.csv Input Data
-
-$call csv2gdx Data/Input_Hourly_RiskAversion.txt id=pRef Index=1 Value= 3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/InputRES_wind.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
-$load pRef
+$load avail
 $gdxin
 
-$call csv2gdx Data/Input_hourly_long.txt id=dRef Index=1 Value='(4..6)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
-$gdxin input.gdx
-$load dRef
-$gdxin
-
-$call csv2gdx Data/InputRES.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_RA.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load periodScale
 $gdxin
 
-$call csv2gdx Data/InputRES.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_Hourly_RA.txt id=pRef Index=1 Value= 3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
-$load avail
+$load pRef
 $gdxin
+
+$call csv2gdx Data/Input_hourly_RA.txt id=dRef Index=1 Value='(4..6)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$gdxin input.gdx
+$load dRef
+$gdxin
+
+
+
 
 
 *** Demand Curves ***
