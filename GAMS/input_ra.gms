@@ -34,7 +34,7 @@
   lineEnd(L)     "end node"
   lineFixInv(L,S_lcost)  "line investment cost (candidate lines)"
   lineInter(L) "line is interzone link"
-  L_cost(S_lcost)   "Cost for 0.01 line capacity"           / low_lcost 250, high_lcost 350/   
+  L_cost(S_lcost)   "Cost for 0.01 line capacity"           / low_lcost 300, high_lcost 300/   
 
 $ifthen '%mode%' == deterministic
 *** Probability Parameters ***  
@@ -48,7 +48,7 @@ Parameters
   prob_co2(S_co2)  "probability for CO2 scenario"      /low_co2 0.5, high_co2 0.5/
   prob_dloc(S_dloc) "probability for demand location scenario"  /north 0.5, south 0.5/
   prob_dlev(S_dlev) "probability for demand level scenario"     /low_dlev 0.4, medium_dlev 0.2, high_dlev 0.4/
-  prob_lcost(S_lcost)   "probability for line investment cost scenario" /low_lcost 1, high_lcost 0/
+  prob_lcost(S_lcost)   "probability for line investment cost scenario" /low_lcost 0.5, high_lcost 0.5/
 $endif  
 
 Parameters
@@ -84,8 +84,8 @@ Parameters
   ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc" north  south
-                                                                     1   0.7    0.3
-                                                                     2   0.3    0.7;                                                                
+                                                                     1   0.9    0.1
+                                                                     2   0.1    0.9;                                                                
   lineIsNew(L)     = 1 ;
   lineGamma(L)     = 1 ;
   lineUB(L)        = ( L.Val - 1 ) * L_step ;
@@ -113,7 +113,7 @@ $endif
   Parameters
   weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
   weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
-  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.2/
+  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.5/
   ;
 
 

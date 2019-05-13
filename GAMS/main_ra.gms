@@ -20,7 +20,7 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 
@@ -218,11 +218,12 @@ $offtext
   );
 
   Results_genInv(Weight,G)                     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_genInv(Weight,LineInvest, G) )         ;
+  Results_buInv(Weight,B)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_buInv(Weight,LineInvest, B) )         ;
   Results_lineInv(Weight)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_lineInv(Weight,LineInvest) )           ;
   Results_welfare_all(Weight)                  = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_all(Weight,LineInvest) )        ;
-  Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G));
+  Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G)) +  sum(B, Results_buInv(Weight,B));
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
-  Results_buInv(Weight,B)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_buInv(Weight,LineInvest, B) )         ;
+
 
 $include output_writer_ra.gms

@@ -35,6 +35,46 @@ put "P(low line cost)= ", prob_lcost("low_lcost"), "\\"/;
 put "P(high line cost)= ", prob_lcost("high_lcost"), "\\"/;
 put "number of zones= ", '%no_of_zones%', "\\"/;
 
+put "Generator Data", "\\" /;
+put "\begin{table}[htb]\caption{Input Data Generators}"/;
+put "\begin{tabular}{lrrr}" /;
+put "\toprule" /;
+put "Generator & Investment Cost (\euro/MW) & Variable Cost low (\euro/MWh) & Variable Cost high (\euro/MWh) \\" /;
+put "\midrule" /;
+put "Coal N &",genFixInv("1"), "&", genVarInv("1","low_CO2"), "&", genVarInv("1","high_CO2"), "\\" /;
+put "CCGT N &",genFixInv("2"), "&", genVarInv("2","low_CO2"), "&", genVarInv("2","high_CO2"), "\\" /;
+put "GT N &",genFixInv("3"), "&", genVarInv("3","low_CO2"), "&", genVarInv("3","high_CO2"), "\\" /;
+put "Coal S &",genFixInv("4"), "&", genVarInv("4","low_CO2"), "&", genVarInv("4","high_CO2"), "\\" /;
+put "CCGT S &",genFixInv("5"), "&", genVarInv("5","low_CO2"), "&", genVarInv("5","high_CO2"), "\\" /;
+put "GT S &",genFixInv("6"), "&", genVarInv("6","low_CO2"), "&", genVarInv("6","high_CO2"), "\\" /;
+put "Wind N &",genFixInv("7"), "&", genVarInv("7","low_CO2"), "&", genVarInv("7","high_CO2"), "\\" /;
+put "Wind S &",genFixInv("8"), "&", genVarInv("8","low_CO2"), "&", genVarInv("8","high_CO2"), "\\" /;
+put "BU N &",genFixInv("6"), "&", buVarInv("low_CO2"), "&", buVarInv("high_CO2"), "\\" /;
+put "BU S &",genFixInv("6"), "&", buVarInv("low_CO2"), "&", buVarInv("high_CO2"), "\\" /;
+put "\bottomrule" /;
+put "\end{tabular}" /;
+put "\end{table}" /;
+
+put "Demand Data", "\\" /;
+put "\begin{table}[htb]\caption{Input Data Generators}"/;
+put "\begin{tabular}{lrrrrr}" /;
+put "\toprule" /;
+put "Hour & Occurence & ref. Price & peak demand low & peak demand medium & peak demand high \\" /;
+loop (T,
+    put T.val, "&", periodScale(T), "&", pRef(T) "&", dRef(T,"low_dlev"), "&", dRef(T, "medium_dlev"), "&", dRef(T, "high_dlev"),
+    "\\" /;
+    );
+put "\bottomrule" /;
+put "\end{tabular}" /;
+put "\end{table}" /;
+
+put "\clearpage" /;
+
+put "Transmission Investment Cost (high):", (L_cost("high_lcost")*100), "\euro/MWh", "\\" /;
+put "Transmission Investment Cost (low):", (L_cost("low_lcost")*100), "\euro/MWh", "\\" /;
+put "Demand Ratio (scenario north):", qPeak("1","north"), " at node 1 and ", qPeak("2","north"), " at node 2", "\\" /;
+put "Demand Ratio (scenario south):", qPeak("1","south"), " at node 1 and ", qPeak("2","south"), " at node 2", "\\" /;
+
 
 put "\begin{table}[htb]\caption{Summary of generation capacity}"/;
 put "\begin{tabular}{l|rrrrrr|rr|rr|rr|rr}" /;
