@@ -22,13 +22,13 @@ option  optcr = 0.0001
 *** Choose number of zones (one, two)
 $set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
-$set mode deterministic
-*uncertain
+$set mode uncertain
+*deterministic
 
 Sets
-         Weight                          / 1 * 2 /
-         L "indices for power lines"     / 1 * 2 /
-         LineInvest                      / 1 * 6 /
+         Weight                          / 1 * 3 /
+         L "indices for power lines"     / 1 * 8 /
+         LineInvest                      / 1 * 8 /
 ;
 
 ***--------------------------------------------------------------------------***
@@ -134,7 +134,7 @@ $offtext
 * Welfare after redispatch
 
   wf_all = (1-weight_rd)
-            * (sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
+            * (sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
             * (( sum((D,T),(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
             - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
             - sum((G,T), genVarInv(G,S_co2) * RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))
@@ -144,15 +144,15 @@ $offtext
             - sum(B,buFixInv * RD_CAP_B(B)))
             + weight_rd
             * (VAR_RD_FIX - (1/(1-percentile)
-            * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
+            * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
             * ETA_RD_FIX(S_co2,S_dloc,S_dlev,S_lcost))));
 
   total_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T), RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((B,T),RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T),SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
-  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)$(prob_co2(S_co2) and prob_dloc(S_dloc) and prob_dlev(S_dlev) and prob_lcost(S_lcost)) = (consObjA(D,T,S_dloc,S_dlev) - consObjB(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost));
-  priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_co2(S_co2) and prob_dloc(S_dloc) and prob_dlev(S_dlev) and prob_lcost(S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
-  expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
+  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = (consObjA(D,T,S_dloc,S_dlev) - consObjB(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost));
+  priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_scen(S_co2,S_dloc,S_dlev,S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
+  expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
 
 
 $ontext
