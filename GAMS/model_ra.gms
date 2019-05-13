@@ -4,38 +4,38 @@
 
   Variables
 * Objective Values
-  welfareSpot            "welfare in spot market"
-  costRedispatch         "cost at redispatch level"
-  welfareRedispatch      "welfare at redispatch level"
+  welfareSpot                            "welfare in spot market"
+  costRedispatch                         "cost at redispatch level"
+  welfareRedispatch                      "welfare at redispatch level"
 * Spot Market
-  f_sp(L,T,S_co2,S_dloc,S_dlev,S_lcost)            "trade flow in spot market"
+  f_sp(L,T,S_co2,S_dloc,S_dlev,S_lcost)  "trade flow in spot market"
 * Redispatch
-  f_rd(L,T,S_co2,S_dloc,S_dlev,S_lcost)            "transmission flows redispatch"
-  angle(N,T,S_co2,S_dloc,S_dlev,S_lcost)           "phase angle in redispatch model"
+  f_rd(L,T,S_co2,S_dloc,S_dlev,S_lcost)  "transmission flows redispatch"
+  angle(N,T,S_co2,S_dloc,S_dlev,S_lcost) "phase angle in redispatch model"
 * Risk Aversion
-  VAR_sp                 "value at risk spot market"
-  VAR_rd                 "value at risk redispatch"
-  CVAR                   "conditional value at risk"
+  VAR_sp                                 "value at risk spot market"
+  VAR_rd                                 "value at risk redispatch"
+  CVAR                                   "conditional value at risk"
   ;
 
   Positive Variables
 * Spot Market
-  d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost)            "demand spot market"
-  g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost)            "generation amount spot market"
-  ig_sp(G)                                         "installed capacity of generators in spot market"
+  d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost)  "demand spot market"
+  g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost)  "generation amount spot market"
+  ig_sp(G)                               "installed capacity of generators in spot market"
 
 * Redispatch
-  d_rd(D,T,S_co2,S_dloc,S_dlev,S_lcost)             "demand redispatcht"
-  g_rd(G,T,S_co2, S_dloc,S_dlev,S_lcost)            "generation amount redispatch"
-  gb_rd(B,T,S_co2, S_dloc,S_dlev,S_lcost)           "generation backup capacity redispatch"
-  ib_rd(B)                                          "investment in backup capacity redispatch"
-  g_n_rd(G,T,S_co2,S_dloc,S_dlev,S_lcost)           "negative generation redispatch"
-  g_p_rd(G,T,S_co2,S_dloc,S_dlev,S_lcost)           "positive generation redispatch"
-  ls_rd(D,T,S_co2,S_dloc,S_dlev,S_lcost)            "load shedding redispatch"
+  d_rd(D,T,S_co2,S_dloc,S_dlev,S_lcost)  "demand redispatcht"
+  g_rd(G,T,S_co2, S_dloc,S_dlev,S_lcost) "generation amount redispatch"
+  gb_rd(B,T,S_co2, S_dloc,S_dlev,S_lcost)"generation backup capacity redispatch"
+  ib_rd(B)                               "investment in backup capacity redispatch"
+  g_n_rd(G,T,S_co2,S_dloc,S_dlev,S_lcost)"negative generation redispatch"
+  g_p_rd(G,T,S_co2,S_dloc,S_dlev,S_lcost)"positive generation redispatch"
+  ls_rd(D,T,S_co2,S_dloc,S_dlev,S_lcost) "load shedding redispatch"
 
 * Risk Aversion
-  eta_sp(S_co2,S_dloc,S_dlev,S_lcost)              "auxiliary variable to model CVAR in spot market stage"
-  eta_rd(S_co2,S_dloc,S_dlev,S_lcost)              "auxiliary variable to model CVAR in redispatch stage"
+  eta_sp(S_co2,S_dloc,S_dlev,S_lcost)    "auxiliary variable to model CVAR in spot market stage"
+  eta_rd(S_co2,S_dloc,S_dlev,S_lcost)    "auxiliary variable to model CVAR in redispatch stage"
   ;
 
 ***--------------------------------------------------------------------------***
@@ -47,7 +47,7 @@
   welfSpot..         welfareSpot =e=   (1-weight_sp)*(
                                         sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
                                         *((sum((D,T), periodScale(T)*(consObjA(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost)
-                                        - 0.5 * consObjB(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost) * d_sp(D,T,s_co2,S_dloc,S_dlev,S_lcost) )) 
+                                        - 0.5 * consObjB(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost) * d_sp(D,T,s_co2,S_dloc,S_dlev,S_lcost) ))
                                         - sum((G,T), genVarInv(G,S_co2) * g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T) ) )) * Year)
                                         - sum(G, genFixInv(G) * ig_sp(G) )
                                         )
@@ -58,11 +58,11 @@
                                         ;
 
 *** CVAR Restrictions
-  Equation CVARSpot;                
+  Equation CVARSpot;
   CVARSpot(S_co2,S_dloc,S_dlev,S_lcost)..
                                         VAR_sp
                                         - ((sum((D,T), periodScale(T)*(consObjA(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost)
-                                        - 0.5 * consObjB(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost) * d_sp(D,T,s_co2,S_dloc,S_dlev,S_lcost))) 
+                                        - 0.5 * consObjB(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost) * d_sp(D,T,s_co2,S_dloc,S_dlev,S_lcost)))
                                         - sum((G,T), genVarInv(G,S_co2) * g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T)) )* Year
                                         - sum(G, genFixInv(G) * ig_sp(G))) =l= eta_sp(S_co2,S_dloc,S_dlev,S_lcost)
                                         ;
@@ -109,8 +109,8 @@
             * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
             * eta_rd(S_co2,S_dloc,S_dlev,S_lcost))))
             ;
-            
-            
+
+
   Equation costRed ;
   costRed..         costRedispatch =e= (1-weight_rd)*(
                                            sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
@@ -120,7 +120,7 @@
                                            + sum(B, buFixInv * ib_rd(B)))
                                            + weight_rd*CVAR
                                            ;
-                                           
+
 *** CVAR Restrictions
 
   Equation CVARRed;
@@ -133,19 +133,19 @@
             - sum(L$(lineIsNew(L) = 1), lineFixInv(L,S_lcost) * lineB(L))
             - sum(G,genFixInv(G)* SP_CAP_G(G))
             - sum(B,buFixInv * ib_rd(B))) =l= eta_rd(S_co2,S_dloc,S_dlev,S_lcost)
-            
+
 
   Equation CVARRed1;
   CVARRed1..
          (VAR_rd + (1/(1-percentile)
          *sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
          * eta_rd(S_co2,S_dloc,S_dlev,S_lcost)))) =l= CVAR
-  
+
   Equation CVARRed2;
   CVARRed2(S_co2,S_dloc,S_dlev,S_lcost)..
          (sum((G,T), genVarInv(G,S_co2) * ( g_rd(G,T,S_co2,S_dloc,S_dlev,S_lcost) - SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) )
                                            * periodScale(T)) * YEAR
-                                           + sum((B,T), buVarInv(S_co2) * gb_rd(B,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))*YEAR ) 
+                                           + sum((B,T), buVarInv(S_co2) * gb_rd(B,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))*YEAR )
                                            + sum(B, buFixInv * ib_rd(B))
                                            + sum(L$(lineIsNew(L) = 1), lineFixInv(L,S_lcost) * lineB(L) ) - VAR_rd
                                            =l= eta_rd(S_co2,S_dloc,S_dlev,S_lcost)

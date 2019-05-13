@@ -22,12 +22,13 @@ option  optcr = 0.0001
 *** Choose number of zones (one, two)
 $set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
-$set mode uncertain
+$set mode deterministic
+*uncertain
 
 Sets
          Weight                          / 1 * 2 /
          L "indices for power lines"     / 1 * 2 /
-         LineInvest                      / 1 * 2 /
+         LineInvest                      / 1 * 6 /
 ;
 
 ***--------------------------------------------------------------------------***
@@ -138,14 +139,14 @@ $offtext
             - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
             - sum((G,T), genVarInv(G,S_co2) * RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))
             - sum((B,T), buVarInv(S_co2) * RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))) * Year
-            - sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost))))            
+            - sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost))))
             - sum(G,genFixInv(G)* SP_CAP_G(G))
             - sum(B,buFixInv * RD_CAP_B(B)))
             + weight_rd
             * (VAR_RD_FIX - (1/(1-percentile)
             * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)
             * ETA_RD_FIX(S_co2,S_dloc,S_dlev,S_lcost))));
-            
+
   total_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T), RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((B,T),RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T),SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
@@ -161,7 +162,7 @@ $ontext
                                                 - sum((T),(priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost))*periodScale(T)))*YEAR ;
   totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost) = sum(D,consumerSurplus(D,S_co2,S_dloc,S_dlev,S_lcost));
   expConsSurpl = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost) * totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost));
-$offtext                                                                                         
+$offtext
 
 
 

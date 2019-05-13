@@ -627,6 +627,24 @@ PlaneRownr=-1
 2=-gdx = test
 3=
 
+[RP:PARAMETERS_RA]
+1=
+
+[RP:INPUT_RA]
+1=
+
+[RP:OUTPUT_WRITER_RA]
+1=
+
+[RP:23042018_LOOP_NODAL]
+1=
+
+[RP:MODEL_RA]
+1=
+
+[RP:MAIN_RA]
+1=
+
 [MRUFILES]
 1=C:\Users\ba62very\Desktop\GAMS_test_RA\output_original.gdx
 2=C:\Users\ba62very\Desktop\GAMS_test_RA\test.gdx
@@ -638,8 +656,12 @@ PlaneRownr=-1
 8=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_conventional.gms
 
 [OPENWINDOW_1]
-FILE0=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\Modell_2Nodes.gms
-FILE1=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\Modell_2Nodes.gms
+FILE0=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
+FILE1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
+FILE2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
+FILE3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\output_writer_ra.gms
+FILE4=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\parameters_ra.gms
+FILE5=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
 MAXIM=1
 TOP=50
 LEFT=50
