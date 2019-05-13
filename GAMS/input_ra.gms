@@ -58,8 +58,19 @@ Parameters
   buVarInv(S_co2)       "Variable cost per MWh for backup"      /low_co2 79, high_co2 85/
   genFixInv(G)   "investment cost"                       / 1 93000, 2 58000, 3 28000, 4 93000, 5 58000, 6 28000, 7 78000, 8 93000 /
   buAtNode(B)    "location (node) of backup"             / 1 1, 2 2 /
-  avail(T,G)     "availability of generators";
+  avail(T,G)     "availability of generators"
+  rawPrice(G)       "price of raw materials (euro per MWh)"    /1 10.4, 2 21, 3 21, 4 10.4, 5 21, 6 21, 7 0, 8 0/
+  co2Price(S_co2)      "price for CO2 emission allowances (euro per ton)" /low_co2 15, high_co2 35/
+  efficFactor(G)    "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
+  emissFactor(G)        "emission factor"       /1 0.35, 2 0.2, 3 0.2, 4 0.35, 5 0.2, 6 0.2, 7 0, 8 0/
+  co2Cost(G, S_co2) "CO2 cost for 1 MWh of conventional production per generator"
+  genVarInv "variable cost per MWh for all generators";
 
+*** Calculation of variable cost ***
+  co2Cost(G, S_co2) = 1/efficFactor(G)*emissFactor(G)*co2Price(S_co2);
+  genVarInv(G, S_co2) = rawPrice(G) + co2Cost(G, S_co2);
+
+$ontext
   Table
   genVarInv(G,S_co2)   "variable cost"               low_co2   high_co2
                                                 1       35      51
@@ -71,6 +82,7 @@ Parameters
                                                 7       0       0
                                                 8       0       0
  ;
+$offtext
  
  Parameters
  
@@ -84,8 +96,8 @@ Parameters
   ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc" north  south
-                                                                     1   0.9    0.1
-                                                                     2   0.1    0.9;                                                                
+                                                                     1   0.3    0.7
+                                                                     2   0.5    0.5;                                                                
   lineIsNew(L)     = 1 ;
   lineGamma(L)     = 1 ;
   lineUB(L)        = ( L.Val - 1 ) * L_step ;
@@ -113,7 +125,7 @@ $endif
   Parameters
   weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
   weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
-  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.5/
+  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.1/
   ;
 
 

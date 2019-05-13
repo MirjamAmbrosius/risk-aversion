@@ -25,9 +25,9 @@ $set no_of_zones two
 $set mode uncertain
 
 Sets
-         Weight                          / 1 * 6 /
-         L "indices for power lines"     / 1 * 7 /
-         LineInvest                      / 1 * 7 /
+         Weight                          / 1 * 2 /
+         L "indices for power lines"     / 1 * 2 /
+         LineInvest                      / 1 * 2 /
 ;
 
 ***--------------------------------------------------------------------------***
