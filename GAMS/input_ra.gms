@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 * 400 /
+  T    "indices for times"                               / 1 * 24 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
@@ -61,7 +61,6 @@ $endif
   avail(T,G)             "availability of generators"
   rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 21, 3 21, 4 10.4, 5 21, 6 21, 7 0, 8 0/
   co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 15, medium_co2 35, high_co2 100/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1/
   efficFactor(G)         "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
   emissFactor(G)         "emission factor"                               /1 0.800, 2 0.340, 3 0.535, 4 0.800, 5 0.340, 6 0.535, 7 0, 8 0/
   co2Cost(G, S_co2)      "CO2 cost for 1 MWh of conventional production per generator"
@@ -79,20 +78,6 @@ $endif
   genVarInv('6', 'medium_co2') = 79 ;
   buVarInv(S_co2) = genVarInv('3', S_co2) ;
 
-$ontext
-  Table
-  genVarInv(G,S_co2)   "variable cost"               low_co2   high_co2
-                                                1       35      51
-                                                2       43      50
-                                                3       68      79
-                                                4       38      54
-                                                5       43      50
-                                                6       68      79
-                                                7       0       0
-                                                8       0       0
- ;
-$offtext
-
  Parameters
 
 *** Demand Parameters ***
@@ -100,10 +85,12 @@ $offtext
   consObjB(D,T,S_dloc,S_dlev)    "slope demand function"
   consObjA(D,T,S_dloc,S_dlev)    "intercept demand function"
   periodScale(T)                 "occurence of scenarios"
-  dRef(T)                        "reference demand per season"
+  dBase(T)                        "reference base demand per season"
+  dRef(T,S_dlev)                "reference demand per season and scenario"
   pRef(T)                        "reference price"
-
+  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1/
   ;
+  
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
             north   base  south
@@ -142,29 +129,28 @@ $endif
 
 *** Read.csv Input Data
 
-$call csv2gdx Data/Input_avail_400.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_avail.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load avail
 $gdxin
 
-$call csv2gdx Data/Input_hourly_400.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load periodScale
 $gdxin
 
-$call csv2gdx Data/Input_hourly_400.txt id=dRef Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly.txt id=dBase Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
-$load dRef
+$load dBase
 $gdxin
 
-$call csv2gdx Data/Input_hourly_400.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load pRef
 $gdxin
 
 *** Demand Curves ***
-
-  consObjB(D,T,S_dloc,S_dlev) = (-1) * pRef(T) / ( dRef(T) * dem_level(S_dlev) * qPeak(D,S_dloc) * epsilon )             ;
-  consObjA(D,T,S_dloc,S_dlev) =  pRef(T) + consObjB(D,T,S_dloc,S_dlev) * dRef(T) * dem_level(S_dlev) * qPeak(D,S_dloc)   ;
-
+  dRef(T,S_dlev) = dBase(T)*dem_level(S_dlev);
+  consObjB(D,T,S_dloc,S_dlev) = (-1) * pRef(T) / ( dRef(T,S_dlev) * dem_level(S_dlev) * qPeak(D,S_dloc) * epsilon )             ;
+  consObjA(D,T,S_dloc,S_dlev) =  pRef(T) + consObjB(D,T,S_dloc,S_dlev) * dRef(T,S_dlev) * dem_level(S_dlev) * qPeak(D,S_dloc)   ;
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost) ;

@@ -1,8 +1,8 @@
 Parameters
 unit "mio" / 1000000 /
-Demand_S(T,S_dlev);
+*Demand_S(T,S_dlev);
 
-Demand_S(T,S_dlev) = dRef(T) * dem_level(S_dlev) ;
+*Demand_S(T,S_dlev) = dRef(T) * dem_level(S_dlev) ;
 
 *** Write texfile with results overview
 file solution/ResultsRiskAversion.tex/;
@@ -66,7 +66,7 @@ put "\begin{tabular}{lrrrrr}" /;
 put "\toprule" /;
 put "Hour & Occurence & ref. Price & peak demand low & peak demand medium & peak demand high \\" /;
 loop (T,
-    put T.val, "&", periodScale(T), "&", pRef(T) "&", Demand_S(T,"low_dlev"), "&", Demand_S(T,"medium_dlev"), "&", Demand_S(T,"high_dlev"),
+    put T.val, "&", periodScale(T), "&", pRef(T) "&", dRef(T,"low_dlev"), "&", dRef(T,"medium_dlev"), "&", dRef(T,"high_dlev"),
     "\\" /;
     );
 put "\bottomrule" /;
