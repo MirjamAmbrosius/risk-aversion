@@ -52,15 +52,15 @@ $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 34, medium_co2 35, high_co2 36/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.2, medium_dlev 1.0, high_dlev 1.8/
-  L_cost(S_lcost)   "Cost for 0.01 line capacity"                        / low_lcost 299, high_lcost 301/ 
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 15, medium_co2 35, high_co2 100/
+  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.8, medium_dlev 1.0, high_dlev 1.2/
+  L_cost(S_lcost)   "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/ 
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
             north   base  south
-         1   0.29    0.3    0.31
-         2   0.71    0.7    0.69  ;
+         1   0.4    0.3    0.2
+         2   0.6    0.7    0.8  ;
 
   Parameters
 

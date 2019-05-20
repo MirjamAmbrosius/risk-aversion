@@ -20,15 +20,15 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones two
+$set no_of_zones one
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 6  /
-         L "indices for power lines"     / 1 * 20 /
-         LineInvest                      / 1 * 20 /
+         Weight                          / 1 * 1  /
+         L "indices for power lines"     / 1 * 2 /
+         LineInvest                      / 1 * 2 /
 ;
 
 ***--------------------------------------------------------------------------***
@@ -146,6 +146,17 @@ $offtext
             * (VAR_RD_FIX - (1/(1-percentile)
             * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
             * ETA_RD_FIX(S_co2,S_dloc,S_dlev,S_lcost))));
+            
+  wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost) =
+              (sum((D,T),(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+            - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
+            - sum((G,T), genVarInv(G,S_co2) * RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))
+            - sum((B,T), buVarInv(S_co2) * RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))) * Year
+            - sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost))
+            - sum(G,genFixInv(G)* SP_CAP_G(G))
+            - sum(B,buFixInv * RD_CAP_B(B));
+*** only for testing: wf_all_test should be equal to wf_all***
+  wf_all_test = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)* wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost));
 
   total_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T), RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((B,T),RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost));
@@ -176,6 +187,7 @@ $offtext
   Loop_lineInv(Weight,LineInvest)               = sum(l, SP_CAP_L(L) ) ;
   Loop_expPriceSpot(Weight,LineInvest)          = expPriceSpot ;
 *  Loop_expConsSurpl(Weight, LineInvest)         = expConsSurpl;
+  Loop_welfare_scenario_all(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost)  = wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost);
 
 ***--------------------------------------------------------------------------***
 ***                     CLEAR PARAMETERs OF MODEL RUN                        ***
@@ -188,6 +200,7 @@ $offtext
   option clear= SP_FLOW          ;
   option clear= SP_CAP_L         ;
   option clear= wf_all           ;
+  option clear= wf_sc_all       ;
 
   );
 );
@@ -209,6 +222,7 @@ $offtext
   Results_totalInv(Weight)
   Results_expPriceSpot(Weight)
 *  Results_expConsSurpl(Weight)
+  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost)
   ;
 
 
@@ -225,6 +239,7 @@ $offtext
   Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G)) +  sum(B, Results_buInv(Weight,B));
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
+  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost) )        ;
 
 
 $include output_writer_ra.gms

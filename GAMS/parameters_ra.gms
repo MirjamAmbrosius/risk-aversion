@@ -5,6 +5,7 @@
 *Welfare after redispatch and investment costs in scenario S
   wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost)      "welfare in each scenario"
   wf_all                 "final welfare"
+  wf_all_test       "should be equal to final welfare"
   
 *generation and demand
   SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)          "demand Spot"
@@ -22,6 +23,7 @@
   Loop_lineInv(Weight,LineInvest)              "cost of line investement"
   Loop_expPriceSpot(Weight,LineInvest)          "expected spot price"
   Loop_expConsSurpl(Weight, LineInvest)         "expected consumer surplus"
+  Loop_welfare_scenario_all(Weight, LineInvest, S_co2,S_dloc,S_dlev,S_lcost)    "welfare per scenario"
   total_generation(S_co2,S_dloc,S_dlev,S_lcost)               "total generation by private firms"
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost)            "total bu generation"
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost)          "total spot generation"
