@@ -113,22 +113,5 @@ put "\end{table}" /;
 put "\clearpage" /;
 put "\end{document}"/;
 
-*** Plot Density functions ***
-* Write .txt document with input for .tex-code *
-
-file cdf   "input file for creating CDF plots"  /input_cdf.txt/;
-put cdf;
-cdf.pc=6;
-put "welfare", "prob" /;
-loop(S_co2,
-    loop(S_dloc,
-        loop(S_dlev,
-            loop(S_lcost,
-                put Results_welfare_scenario_all("1",S_co2, S_dloc, S_dlev, S_lcost), prob_scen(S_co2, S_dloc, S_dlev, S_lcost) /;
-             );
-         );
-     );
- );
-
 
 

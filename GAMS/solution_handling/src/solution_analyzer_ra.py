@@ -18,19 +18,12 @@ if __name__ == "__main__":
     output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra.gdx")
     # store welfare results in a multidimensional dictionary
     scen_2_welf_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_welfare_scenario_all"] )
-    # print welfare dictionary
-    #print("Welfare per scenario:")
-    #for rec in scen_2_welf_dict:
-    #    print("  ", rec, ":", scen_2_welf_dict[rec])
     # order dictionary by welfare from lowest to highest
     def takeSecond(elem):
     	return elem[1]
     scen_welf_lists = sorted(scen_2_welf_dict.items(), key=takeSecond)
-    #print(scen_welf_lists)
     # create two separate lists for plotting
     scen, welfare = zip(*scen_welf_lists)
-    #print(welfare)
-    #print(scen)
     indexes = np.arange(len(scen))
     width = 1
     # plot welfare for each scenario
@@ -41,30 +34,20 @@ if __name__ == "__main__":
     plt.xticks(indexes + width*0.5, scen, rotation = 90 )
     plt.tight_layout()
     #plt.show()
-    plt.savefig('welfare_per_scenario.png')
+    plt.savefig('C:/Users/ba62very/MyGit/risk-aversion/GAMS/solution_handling/plots/welfare_per_scenario.png')
     plt.close()
-    #print(len(scen))
-    #print(scen[1])
     # get probabilities for each scenario from gdx
     scen_2_prob_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["prob_scen"] )
-    #print("Probability per scenario:")
-    #for rec in scen_2_prob_dict:
-    #    print("  ", rec, ":", scen_2_prob_dict[rec])
     # create welfare 2 probability dictionary
     welf_2_prob_dict = dict()
     for scen in scen_2_welf_dict.keys():
     	reduced_scen= scen[1:5]
-    #	print(scen)
-   # 	print(reduced_scen)
     	welfare = scen_2_welf_dict[scen]
     	probability = scen_2_prob_dict[reduced_scen]
     	welf_2_prob_dict[welfare] = probability
     welf_prob_lists = sorted(welf_2_prob_dict.items())
-    #print(welf_prob_lists)
     welfare, prob = zip(*welf_prob_lists)
     cum_prob = np.cumsum(prob)
-    #print("cum prob:")
-    #print(cum_prob)
     # plot CDF
     plt.figure(figsize=(10,6), dpi=80)
     plt.grid(True)
@@ -73,11 +56,7 @@ if __name__ == "__main__":
     plt.xlabel('Welfare (€)')
     plt.ylabel('cumulative probability')
     #plt.show()
-    plt.savefig('CDF.png')
+    plt.savefig('C:/Users/ba62very/MyGit/risk-aversion/GAMS/solution_handling/plots/CDF.png')
     plt.close()
-    # testing
-    #for welf in welf_2_prob_dict.keys():
-    #	print(welf, ":", welf_2_prob_dict[welf])
 
-    # order welfare 2 probability scenario
 
