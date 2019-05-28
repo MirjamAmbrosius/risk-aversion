@@ -20,13 +20,13 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1   /
+         Weight                          / 1 * 6  /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;

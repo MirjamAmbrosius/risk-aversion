@@ -53,8 +53,8 @@ $endif
 
 *** Scenario Assumptions ***
   co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0, medium_co2 35, high_co2 100/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.95, medium_dlev 1.0, high_dlev 1.05/
-  L_cost(S_lcost)   "Cost for 0.01 line capacity"                        / low_lcost 50, high_lcost 550/ 
+  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1/
+  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/ 
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
@@ -82,12 +82,6 @@ $endif
 *** Calculation of variable cost ***
   co2Cost(G, S_co2) = emissFactor(G)*co2Price(S_co2);
   genVarInv(G, S_co2) = rawPrice(G)/efficFactor(G) + co2Cost(G, S_co2);
-*  genVarInv('1', 'medium_co2') = 51 ;
-*  genVarInv('2', 'medium_co2') = 50 ;
-*  genVarInv('3', 'medium_co2') = 79 ;
-*  genVarInv('4', 'medium_co2') = 54 ;
-*  genVarInv('5', 'medium_co2') = 50 ;
-*  genVarInv('6', 'medium_co2') = 79 ;
   buVarInv(S_co2) = genVarInv('3', S_co2) ;
 
  Parameters
