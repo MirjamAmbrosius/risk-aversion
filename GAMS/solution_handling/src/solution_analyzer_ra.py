@@ -5,9 +5,7 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import logging
 #from collections import orderedDict
-logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -15,11 +13,11 @@ if __name__ == "__main__":
     else:
         ws = GamsWorkspace()
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra_oneZone.gdx")
 
     # get number of zones
     node_to_zone_dict = dict( (rec.keys[0], rec.value) for rec in output_ra["NodeInZone"] )
-    if node_to_zone_dict["1"] == node_to_zone_dict["2"]:
+    if int(node_to_zone_dict["1"]) == int(node_to_zone_dict["2"]):
         no_of_zones = 1
     else:
         no_of_zones = 2
@@ -30,14 +28,13 @@ if __name__ == "__main__":
     scen_2_welf_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_welfare_scenario_all"] )
 
 ### Plot welfare results ###
-    logger.info("plot welfare results")
     # Order for weight first
     for weight_counter in range(1,6):
         welf_2_red_scen_dict = dict()
         for scen in scen_2_welf_dict.keys():
             weight = int(scen[0])
             if weight == weight_counter:
-                reduced_scen= scen[1:5]
+                reduced_scen= scen[1:6]
                 welfare = scen_2_welf_dict[scen]
                 welf_2_red_scen_dict[welfare] = reduced_scen
         welf_red_scen_lists = sorted(welf_2_red_scen_dict.items())
@@ -46,7 +43,7 @@ if __name__ == "__main__":
             indexes = np.arange(len(scen))
             width = 1
             # plot welfare for each scenario
-            plt.figure(figsize=(10,6), dpi=80)
+            plt.figure(figsize=(10,10), dpi=80)
             plt.grid(True)
             plt.title("Welfare per Scenario in € (no. of zones: " + str(no_of_zones) + ", weight: " + str((weight_counter-1)*0.2) + ")")
             plt.bar(indexes,welfare,width)
@@ -66,7 +63,7 @@ if __name__ == "__main__":
         for scen in scen_2_welf_dict.keys(): 
             weight = int(scen[0])
             if weight == weight_counter:
-                reduced_scen= scen[1:5]
+                reduced_scen= scen[1:6]
                 welfare = scen_2_welf_dict[scen]
                 probability = scen_2_prob_dict[reduced_scen]
                 welf_2_prob_dict[welfare] = probability

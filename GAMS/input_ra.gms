@@ -8,10 +8,11 @@
   Z    "indices for zones"                               / 1 *   2 /
   B    "indices for backup"                              / 1 *   2 /
 
-  S_co2    "indices for scenarios"                       / low_co2, medium_co2, high_co2 /
+  S_co2    "indices for co2 cost scenarios"                       / low_co2, medium_co2, high_co2 /
   S_dloc   "indices for demand location scenarios"       / north, base, south /
   S_dlev   "indices for demand level scenarios"          / low_dlev, medium_dlev, high_dlev /
   S_lcost  "indices for line investment cost scenarios"  / low_lcost, high_lcost /
+  S_wind   "indices for wind availability scenarios in southern node"     /low_wind, medium_wind, high_wind/
   ;
 
   Alias (n,nn) ;
@@ -42,28 +43,40 @@ $ifthen '%mode%' == deterministic
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0, base 1, south 0/
   prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0, medium_dlev 1, high_dlev 0/
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 1, high_lcost 0/
+  prob_wind(S_wind)      "probability for wind availability scenarios"   /low_wind 0, medium_wind 0, high_wind 1/
 $else
 *** Probability Parameters ***
   prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.33, medium_co2 0.33, high_co2 0.33/
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.33, base 0.33, south 0.33/
   prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.33, medium_dlev 0.33, high_dlev 0.33/
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.5, high_lcost 0.5/
+  prob_wind(S_wind)      "probability for wind availability scenarios"   /low_wind 0, medium_wind 0, high_wind 1/
 $endif
-  prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
+  prob_scen(S_co2,S_dloc,S_dlev,S_lcost, S_wind)
 
 *** Scenario Assumptions ***
   co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0, medium_co2 35, high_co2 100/
   dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1/
-  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/ 
+  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
             north   base  south
          1   0.4    0.3    0.2
-         2   0.6    0.7    0.8  ;
+         2   0.6    0.7    0.8;
+  Table        
+  avail_level(G,S_wind)    "availability of generators in different wind scenarios"
+            low_wind    medium_wind     high_wind
+        1       1           1               1
+        2       1           1               1
+        3       1           1               1
+        4       1           1               1
+        5       1           1               1
+        6       1           1               1
+        7       1           1               1
+        8       0.8         0.9             1;
 
   Parameters
-
 *** Generator Parameters ***
   genIsRES(G)            "renewable generator"                           / 7 1, 8 1 /
   genAtNode(G)           "location (node)"                               / 1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2 /
@@ -71,7 +84,8 @@ $endif
 *  / low_co2 79, medium_co2 85, high_co2 120 /
   genFixInv(G)           "investment cost"                               / 1 93000, 2 58000, 3 32000, 4 93000, 5 58000, 6 32000, 7 78000, 8 93000 /
   buAtNode(B)            "location (node) of backup"                     / 1 1, 2 2 /
-  avail(T,G)             "availability of generators"
+  availBase(T,G)         "basic availability of generators"
+  avail(T,G,S_wind)      "availability of generators per scenario"
   rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 21, 3 21, 4 10.4, 5 21, 6 21, 7 0, 8 0/
   efficFactor(G)         "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
   emissFactor(G)         "emission factor"                               /1 0.800, 2 0.340, 3 0.535, 4 0.800, 5 0.340, 6 0.535, 7 0, 8 0/
@@ -92,12 +106,10 @@ $endif
   consObjA(D,T,S_dloc,S_dlev)    "intercept demand function"
   periodScale(T)                 "occurence of scenarios"
   dBase(T)                       "reference base demand per season"
-  dRef(T,S_dlev)                "reference demand per season and scenario"
+  dRef(T,S_dlev)                 "reference demand per season and scenario"
   pRef(T)                        "reference price"
   ;
-  
-
-
+ 
   lineIsNew(L)     = 1 ;
   lineGamma(L)     = 1 ;
   lineUB(L)        = ( L.Val - 1 ) * L_step ;
@@ -130,9 +142,9 @@ $endif
 
 *** Read.csv Input Data
 
-$call csv2gdx Data/Input_avail.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_avail.txt id=availBase Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
-$load avail
+$load availBase
 $gdxin
 
 $call csv2gdx Data/Input_hourly.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
@@ -152,6 +164,9 @@ $gdxin
 
 *** Demand Curves ***
   dRef(T,S_dlev) = dBase(T)*dem_level(S_dlev);
+  avail(T,G,S_wind) = availBase(T,G)*avail_level(G,S_wind);
   consObjB(D,T,S_dloc,S_dlev) = (-1) * pRef(T) / ( dRef(T,S_dlev) * dem_level(S_dlev) * qPeak(D,S_dloc) * epsilon )             ;
   consObjA(D,T,S_dloc,S_dlev) =  pRef(T) + consObjB(D,T,S_dloc,S_dlev) * dRef(T,S_dlev) * dem_level(S_dlev) * qPeak(D,S_dloc)   ;
-  prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost) ;
+  prob_scen(S_co2,S_dloc,S_dlev,S_lcost,S_wind) = prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost)*prob_wind(S_wind) ;
+
+
