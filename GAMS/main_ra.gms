@@ -26,7 +26,7 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 6  /
+         Weight                          / 1 * 3  /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;
