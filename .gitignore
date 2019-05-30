@@ -240,3 +240,12 @@ TSWLatexianTemp*
 
 # generated if using elsarticle.cls
 *.spl
+
+# others
+*.png
+*.pdf
+*.tex
+*.gdx
+*.lst
+*.lxi
+*.zip
