@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 * 24 /
+  T    "indices for times"                               / 1 *   24 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
@@ -46,17 +46,17 @@ $ifthen '%mode%' == deterministic
   prob_wind(S_wind)      "probability for wind availability scenarios"   /low_wind 0, medium_wind 0, high_wind 1/
 $else
 *** Probability Parameters ***
-  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.33, medium_co2 0.33, high_co2 0.33/
-  prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.33, base 0.33, south 0.33/
-  prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.33, medium_dlev 0.33, high_dlev 0.33/
+  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.3, medium_co2 0.4, high_co2 0.3/
+  prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.3, base 0.4, south 0.3/
+  prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0, medium_dlev 1, high_dlev 0/
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.5, high_lcost 0.5/
-  prob_wind(S_wind)      "probability for wind availability scenarios"   /low_wind 0, medium_wind 0, high_wind 1/
+  prob_wind(S_wind)      "probability for wind availability scenarios"   /low_wind 0.3, medium_wind 0.3, high_wind 0.4/
 $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost, S_wind)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0, medium_co2 35, high_co2 100/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1/
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 15, medium_co2 45, high_co2 100/
+  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 1, medium_dlev 1, high_dlev 1/
   L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/
 ;
   Table
@@ -89,6 +89,7 @@ $endif
   rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 21, 3 21, 4 10.4, 5 21, 6 21, 7 0, 8 0/
   efficFactor(G)         "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
   emissFactor(G)         "emission factor"                               /1 0.800, 2 0.340, 3 0.535, 4 0.800, 5 0.340, 6 0.535, 7 0, 8 0/
+*  emissFactor(G)         "emission factor"                               /1 0.800, 2 0.440, 3 0.535, 4 0.800, 5 0.440, 6 0.535, 7 0, 8 0/
   co2Cost(G, S_co2)      "CO2 cost for 1 MWh of conventional production per generator"
   genVarInv              "variable cost per MWh for all generators"
 ;
@@ -136,7 +137,7 @@ $endif
   Parameters
   weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
   weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
-  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.1/
+  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.05/
   ;
 
 

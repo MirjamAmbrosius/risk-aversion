@@ -13,7 +13,7 @@ if __name__ == "__main__":
     else:
         ws = GamsWorkspace()
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra_oneZone.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra.gdx")
 
     # get number of zones
     node_to_zone_dict = dict( (rec.keys[0], rec.value) for rec in output_ra["NodeInZone"] )
@@ -29,12 +29,12 @@ if __name__ == "__main__":
 
 ### Plot welfare results ###
     # Order for weight first
-    for weight_counter in range(1,6):
+    for weight_counter in range(0,8):
         welf_2_red_scen_dict = dict()
         for scen in scen_2_welf_dict.keys():
             weight = int(scen[0])
             if weight == weight_counter:
-                reduced_scen= scen[1:6]
+                reduced_scen= scen[1:3], scen[4:6]
                 welfare = scen_2_welf_dict[scen]
                 welf_2_red_scen_dict[welfare] = reduced_scen
         welf_red_scen_lists = sorted(welf_2_red_scen_dict.items())
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # get probabilities for each scenario from gdx
     scen_2_prob_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["prob_scen"] )
     # create welfare 2 probability dictionary
-    for weight_counter in range(1,6):
+    for weight_counter in range(0,8):
         welf_2_prob_dict=dict()
         for scen in scen_2_welf_dict.keys(): 
             weight = int(scen[0])

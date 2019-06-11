@@ -20,13 +20,13 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 3  /
+         Weight                          / 1 * 6  /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;
@@ -40,8 +40,8 @@ $include parameters_ra.gms
 $include model_ra.gms
 
 *** read gurobi.opt
-*  Spotmarket.OptFile = 1 ;
-*  RedispatchWelfare.OptFile = 1 ;
+  Spotmarket.OptFile = 1 ;
+  Redispatch.OptFile = 1 ;
 
 *** time after which the solver terminates:
  Spotmarket.reslim = 10000;
@@ -231,7 +231,7 @@ $offtext
     maxWelfare(Weight)$(Loop_welfare_all(Weight,LineInvest)=smax(LineInvest2, Loop_welfare_all(Weight,LineInvest2) )) = LineInvest.val             ;
 
   );
-
+$offOrder
   Results_genInv(Weight,G)                     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_genInv(Weight,LineInvest, G) )         ;
   Results_buInv(Weight,B)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_buInv(Weight,LineInvest, B) )         ;
   Results_lineInv(Weight)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_lineInv(Weight,LineInvest) )           ;
@@ -239,7 +239,7 @@ $offtext
   Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G)) +  sum(B, Results_buInv(Weight,B));
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
-  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost,S_wind) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost,S_wind) )        ;
+  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost,S_wind)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost,S_wind) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost,S_wind) )        ;
 
 
 $include output_writer_ra.gms
