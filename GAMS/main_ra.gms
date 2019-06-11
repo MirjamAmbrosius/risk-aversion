@@ -26,7 +26,7 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 3  /
+         Weight                          / 1 * 1  /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;
@@ -40,8 +40,8 @@ $include parameters_ra.gms
 $include model_ra.gms
 
 *** read gurobi.opt
-*  Spotmarket.OptFile = 1 ;
-*  RedispatchWelfare.OptFile = 1 ;
+  Spotmarket.OptFile = 1 ;
+  Redispatch.OptFile = 1 ;
 
 *** time after which the solver terminates:
  Spotmarket.reslim = 10000;
