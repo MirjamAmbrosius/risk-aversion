@@ -18,9 +18,9 @@
 
   Scalars
   M              bigM                                  / 10000    /
-  epsilon        elacticity of demand                  /    -0.10 /
+  epsilon        elasticity of demand                  /    -0.10 /
   Year           Hours per year                        /  8760    /
-  buFixInv       Annuity per 1 MW backup capacity      / 32000    /
+  buFixInv       Annuity per 1 MW backup capacity      / 16000    /
   DSM            Load Shedding costs                   /  3000    /
   L_step         Capacity steps for lines              /   0.05    /
   ;
@@ -44,23 +44,23 @@ $ifthen '%mode%' == deterministic
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 1, high_lcost 0/
 $else
 *** Probability Parameters ***
-  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.3, medium_co2 0.4, high_co2 0.3/
+  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.3, medium_co2 0.5, high_co2 0.2/
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.3, base 0.4, south 0.3/
   prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
-  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.5, high_lcost 0.5/
+  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.8, high_lcost 0.2/
 $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0, medium_co2 35, high_co2 100/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.8, medium_dlev 1.0, high_dlev 1.1/
-  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 250, high_lcost 350/ 
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0 , medium_co2 45, high_co2 150/
+  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.8, medium_dlev 0.9, high_dlev 1/
+  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 50, high_lcost 450/ 
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
             north   base  south
-         1   0.4    0.3    0.2
-         2   0.6    0.7    0.8  ;
+         1   0.35    0.3    0.25
+         2   0.65    0.7    0.75  ;
 
   Parameters
 
@@ -68,7 +68,6 @@ $endif
   genIsRES(G)            "renewable generator"                           / 7 1, 8 1 /
   genAtNode(G)           "location (node)"                               / 1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2 /
   buVarInv(S_co2)        "Variable cost per MWh for backup"
-*  / low_co2 79, medium_co2 85, high_co2 120 /
   genFixInv(G)           "investment cost"                               / 1 93000, 2 58000, 3 32000, 4 93000, 5 58000, 6 32000, 7 78000, 8 93000 /
   buAtNode(B)            "location (node) of backup"                     / 1 1, 2 2 /
   avail(T,G)             "availability of generators"
@@ -82,7 +81,7 @@ $endif
 *** Calculation of variable cost ***
   co2Cost(G, S_co2) = emissFactor(G)*co2Price(S_co2);
   genVarInv(G, S_co2) = rawPrice(G)/efficFactor(G) + co2Cost(G, S_co2);
-  buVarInv(S_co2) = genVarInv('3', S_co2) ;
+  buVarInv(S_co2) = (genVarInv('3', S_co2))*2 ;
 
  Parameters
 
@@ -124,7 +123,7 @@ $endif
   Parameters
   weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
   weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
-  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.1/
+  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.99/
   ;
 
 

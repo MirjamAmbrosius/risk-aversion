@@ -3,6 +3,7 @@ nodemethod 2
 mipgap 1e-8
 names 0
 threads 6
+numericfocus 2
 *usebasis 0
 *rerun 1
 *iis 1

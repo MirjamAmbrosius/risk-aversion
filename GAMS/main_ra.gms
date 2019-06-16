@@ -20,13 +20,13 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones two
+$set no_of_zones one
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 1  /
+         Weight                          / 1 * 6     /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;
@@ -166,17 +166,6 @@ $offtext
   expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
 
 
-$ontext
-  consumerSurplus(D,S_co2,S_dloc,S_dlev,S_lcost) =(sum((T), (consObjA(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)
-                                                - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost) )
-                                                * periodScale(T) )
-                                                - sum((T),(priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost))*periodScale(T)))*YEAR ;
-  totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost) = sum(D,consumerSurplus(D,S_co2,S_dloc,S_dlev,S_lcost));
-  expConsSurpl = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_co2(S_co2)*prob_dloc(S_dloc)*prob_dlev(S_dlev)*prob_lcost(S_lcost) * totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost));
-$offtext
-
-
-
 ***--------------------------------------------------------------------------***
 ***                       RESULTS to LOOP-PARAMETER                          ***
 ***--------------------------------------------------------------------------***
@@ -231,6 +220,7 @@ $offtext
     maxWelfare(Weight)$(Loop_welfare_all(Weight,LineInvest)=smax(LineInvest2, Loop_welfare_all(Weight,LineInvest2) )) = LineInvest.val             ;
 
   );
+$offorder
 
   Results_genInv(Weight,G)                     = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_genInv(Weight,LineInvest, G) )         ;
   Results_buInv(Weight,B)                      = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_buInv(Weight,LineInvest, B) )         ;
