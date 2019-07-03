@@ -44,17 +44,17 @@ $ifthen '%mode%' == deterministic
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 1, high_lcost 0/
 $else
 *** Probability Parameters ***
-  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.3, medium_co2 0.5, high_co2 0.2/
+  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.4, medium_co2 0.5, high_co2 0.1/
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.3, base 0.4, south 0.3/
   prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
-  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.8, high_lcost 0.2/
+  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.7, high_lcost 0.3/
 $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0 , medium_co2 45, high_co2 150/
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0 , medium_co2 15, high_co2 150/
   dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.8, medium_dlev 0.9, high_dlev 1/
-  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 50, high_lcost 450/ 
+  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 150, high_lcost 350/ 
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
@@ -68,10 +68,10 @@ $endif
   genIsRES(G)            "renewable generator"                           / 7 1, 8 1 /
   genAtNode(G)           "location (node)"                               / 1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2 /
   buVarInv(S_co2)        "Variable cost per MWh for backup"
-  genFixInv(G)           "investment cost"                               / 1 93000, 2 58000, 3 32000, 4 93000, 5 58000, 6 32000, 7 78000, 8 93000 /
+  genFixInv(G)           "investment cost"                               / 1 1000000, 2 50000, 3 28000, 4 1000000, 5 50000, 6 28000, 7 93000, 8 110000 /
   buAtNode(B)            "location (node) of backup"                     / 1 1, 2 2 /
   avail(T,G)             "availability of generators"
-  rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 21, 3 21, 4 10.4, 5 21, 6 21, 7 0, 8 0/
+  rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 19, 3 19, 4 10.4, 5 19, 6 19, 7 0, 8 0/
   efficFactor(G)         "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
   emissFactor(G)         "emission factor"                               /1 0.800, 2 0.340, 3 0.535, 4 0.800, 5 0.340, 6 0.535, 7 0, 8 0/
   co2Cost(G, S_co2)      "CO2 cost for 1 MWh of conventional production per generator"
@@ -123,7 +123,7 @@ $endif
   Parameters
   weight_sp     "weight assigned to the worst-case spot market outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
   weight_rd     "weight assigned to the worst-case redispacth outcome for risk averse market participants (0 being the risk-neutral case and 1 being strictly robust)"
-  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.99/
+  percentile    "lower percentile of welfare function that is considered to be the worst case"                /0.90/
   ;
 
 

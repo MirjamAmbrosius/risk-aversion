@@ -26,7 +26,7 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 6     /
+         Weight                          / 1 * 6  /
          L "indices for power lines"     / 1 * 20 /
          LineInvest                      / 1 * 20 /
 ;
@@ -146,6 +146,16 @@ $offtext
             * (VAR_RD_FIX - (1/(1-percentile)
             * sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
             * ETA_RD_FIX(S_co2,S_dloc,S_dlev,S_lcost))));
+           
+  wf_rn = (sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
+            * (( sum((D,T),(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+            - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
+            - sum((G,T), genVarInv(G,S_co2) * RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))
+            - sum((B,T), buVarInv(S_co2) * RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T))) * Year
+            - sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost))))
+            - sum(G,genFixInv(G)* SP_CAP_G(G))
+            - sum(B,buFixInv * RD_CAP_B(B)));
+  risk_adjustment = wf_all-wf_rn;
             
   wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost) =
               (sum((D,T),(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
@@ -155,15 +165,14 @@ $offtext
             - sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost))
             - sum(G,genFixInv(G)* SP_CAP_G(G))
             - sum(B,buFixInv * RD_CAP_B(B));
-*** only for testing: wf_all_test should be equal to wf_all***
-  wf_all_test = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)* wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost));
-
+            
   total_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T), RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((B,T),RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T),SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = (consObjA(D,T,S_dloc,S_dlev) - consObjB(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost));
   priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_scen(S_co2,S_dloc,S_dlev,S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
   expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
+  price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) $prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = sum(Z$(Z.val = GenInZone(G)), ZFKL.m(Z,T,S_co2,S_dloc,S_dlev,S_lcost) / Year / periodScale(T) / prob_scen(S_co2,S_dloc,S_dlev,S_lcost));
 
 
 ***--------------------------------------------------------------------------***
@@ -175,8 +184,33 @@ $offtext
   Loop_buInv(Weight, LineInvest, B)             = RD_CAP_B(B)  ;
   Loop_lineInv(Weight,LineInvest)               = sum(l, SP_CAP_L(L) ) ;
   Loop_expPriceSpot(Weight,LineInvest)          = expPriceSpot ;
+  Loop_wf_rn(Weight)                            = wf_rn;
+  Loop_risk_adjustment(Weight)                          = risk_adjustment;
 *  Loop_expConsSurpl(Weight, LineInvest)         = expConsSurpl;
   Loop_welfare_scenario_all(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost)  = wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost);
+
+*** Consumer and Producer Surplus
+  Loop_exp_rents_CS(Weight,LineInvest,D) = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
+                                            * ((sum(T,(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
+                                            - sum((T), (priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T)))
+                                             * YEAR)) ;
+
+  Loop_exp_rents_PS(Weight,LineInvest,G)  = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
+                                            *( sum((T), ( Price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) - genVarInv(G,S_co2) ) * SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T) ) * YEAR
+                                                                                         - genFixInv(G) * SP_CAP_G(G))) ;
+
+  Loop_rents_scen_CS(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) = (sum(T,(consObjA(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            - 0.5 * consObjB(D,T,S_dloc,S_dlev) * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T))
+                                            - sum((T), (priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                            * SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)) * periodScale(T)))
+                                             * YEAR;
+  Loop_rents_scen_PS(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) = sum((T), ( Price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) - genVarInv(G,S_co2) ) * SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T) ) * YEAR
+                                                                                         - genFixInv(G) * SP_CAP_G(G);                                                                                       
+
 
 ***--------------------------------------------------------------------------***
 ***                     CLEAR PARAMETERs OF MODEL RUN                        ***
@@ -212,6 +246,12 @@ $offtext
   Results_expPriceSpot(Weight)
 *  Results_expConsSurpl(Weight)
   Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_wf_rn(Weight)
+  Results_risk_adjustment(Weight)
+  Results_exp_rents_cs(Weight,D)
+  Results_exp_rents_ps(Weight,G)
+  Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost)
   ;
 
 
@@ -230,6 +270,10 @@ $offorder
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
   Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost) )        ;
-
-
+  Results_wf_rn(Weight)                       = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_wf_rn(Weight) );
+  Results_risk_adjustment(Weight)             = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_risk_adjustment(Weight) );
+  Results_exp_rents_cs(Weight,D)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_exp_rents_cs(Weight,LineInvest,D) )         ;
+  Results_exp_rents_ps(Weight,G)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_exp_rents_ps(Weight,LineInvest,G) )         ;
+  Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_rents_scen_cs(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_rents_scen_ps(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) );
 $include output_writer_ra.gms

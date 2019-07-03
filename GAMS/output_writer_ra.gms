@@ -83,11 +83,11 @@ put "Demand Ratio (scenario south):", qPeak("1","south"), " at node 1 and ", qPe
 
 
 put "\begin{table}[htb]\caption{Summary of generation capacity}"/;
-put "\begin{tabular}{l|rrrrrr|rr|rr|rr|rr}" /;
+put "\begin{tabular}{l|rrrrrr|rr|rr|rr|rrrr}" /;
 put "\toprule" /;
-put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &  BU  &  BU  & totalInv  &    Line   &  Spotprice   &  Welf   \\" /;
-put "        &      MW &       MW &      MW &      MW &     MW &      MW &      MW &      MW  &  MW  &  MW  &    MW     &    MW     &  \euro/MWh &  T\euro   \\" /;
-put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &  N   &  S   &    NS     &    N-S    &  NS      &   NS    \\" /;
+put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &  BU  &  BU  & totalInv  &    Line   &  Spotprice   &  Welf (RA) & Welf (RN)& price RA \\" /;
+put "        &      MW &       MW &      MW &      MW &     MW &      MW &      MW &      MW  &  MW  &  MW  &    MW     &    MW     &  \euro/MWh &  T\euro &  T\euro &  T\euro   \\" /;
+put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &  N   &  S   &    NS     &    N-S    &  NS      &   NS &   NS &   NS   \\" /;
 put "\midrule" /;
 loop(Weight,
   put ((Weight.val-1)*0.2),
@@ -105,6 +105,34 @@ loop(Weight,
          "&", Results_lineInv(Weight),
          "&", Results_expPriceSpot(Weight),
          "&", ((Results_welfare_all(Weight))/1000),
+         "&", ((Results_wf_rn(Weight))/1000),
+         "&", ((Results_risk_adjustment(Weight))/1000),
+         
+  "\\" /;
+  );
+put "\bottomrule" /;
+put "\end{tabular}" /;
+put "\end{table}" /;
+put "\clearpage" /;
+
+put "\begin{table}[htb]\caption{Expected PS and CS (\euro/MWh) }"/;
+put "\begin{tabular}{l|rrrrrr|rr|rr}" /;
+put "\toprule" /;
+put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &  CS  & CS   \\" /;
+put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &  N   &  S   \\" /;
+put "\midrule" /;
+loop(Weight,
+  put ((Weight.val-1)*0.2),
+         "&", ((Results_exp_rents_ps(Weight,"1"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"2"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"3"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"4"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"5"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"6"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"7"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"8"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "1"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "2"))/1000),
   "\\" /;
   );
 put "\bottomrule" /;
