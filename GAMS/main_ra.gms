@@ -20,7 +20,7 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
@@ -252,6 +252,9 @@ $offtext
   Results_exp_rents_ps(Weight,G)
   Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost)
   Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_exp_rents_ps_node(Weight,N)
   ;
 
 
@@ -276,4 +279,7 @@ $offorder
   Results_exp_rents_ps(Weight,G)              = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_exp_rents_ps(Weight,LineInvest,G) )         ;
   Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_rents_scen_cs(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) );
   Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_rents_scen_ps(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(D,Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost)) ;
+  Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(G,Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost)) ;
+  Results_exp_rents_ps_node(Weight,N) = sum(G$(genAtNode(G)   = N.val),Results_exp_rents_ps(Weight,G)) ;
 $include output_writer_ra.gms
