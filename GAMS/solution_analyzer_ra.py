@@ -15,7 +15,7 @@ if __name__ == "__main__":
         ws = GamsWorkspace()
 
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/main_ra_1Zone.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/test_400_1_d.gdx")
     # store welfare results in a multidimensional dictionary
     scen_2_welf_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_welfare_scenario_all"] )
     # print welfare dictionary

@@ -27,8 +27,8 @@ $set mode uncertain
 
 Sets
          Weight                          / 1 * 6  /
-         L "indices for power lines"     / 1 * 20 /
-         LineInvest                      / 1 * 20 /
+         L "indices for power lines"     / 1  /
+         LineInvest                      / 1  /
 ;
 
 ***--------------------------------------------------------------------------***
