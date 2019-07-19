@@ -141,5 +141,23 @@ put "\end{table}" /;
 put "\clearpage" /;
 put "\end{document}"/;
 
+file investment /investment-plots.txt/;
+put investment;
+put "weight", system.tab, "Coal1", system.tab, "CCGT1", system.tab, "GT1",system.tab, "Coal2",system.tab, "CCGT2",system.tab, "GT2",system.tab,"Wind1",system.tab,"Wind2",system.tab, "Network" /;
+loop(Weight,
+  put ((Weight.val-1)*0.2),
+         system.tab, Results_genInv(Weight,"1"),
+         system.tab, Results_genInv(Weight,"2"),
+         system.tab, Results_genInv(Weight,"3"),
+         system.tab, Results_genInv(Weight,"4"),
+         system.tab, Results_genInv(Weight,"5"),
+         system.tab, Results_genInv(Weight,"6"),
+         system.tab, Results_genInv(Weight,"7"),
+         system.tab, Results_genInv(Weight,"8"),
+         system.tab, Results_lineInv(Weight)/;
+  );
+;
+
+
 
 
