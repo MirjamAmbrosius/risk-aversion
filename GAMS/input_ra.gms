@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 * 400 /
+  T    "indices for times"                               / 1 * 24 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
