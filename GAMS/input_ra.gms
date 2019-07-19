@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 * 24 /
+  T    "indices for times"                               / 1 * 400 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
@@ -22,7 +22,7 @@
   Year           Hours per year                        /  8760    /
   buFixInv       Annuity per 1 MW backup capacity      / 16000    /
   DSM            Load Shedding costs                   /  3000    /
-  L_step         Capacity steps for lines              /   0.05    /
+  L_step         Capacity steps for lines              /   0.05   /
   ;
 
   Parameters
@@ -44,17 +44,17 @@ $ifthen '%mode%' == deterministic
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 1, high_lcost 0/
 $else
 *** Probability Parameters ***
-  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.4, medium_co2 0.5, high_co2 0.1/
+  prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.2, medium_co2 0.6, high_co2 0.2/
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.3, base 0.4, south 0.3/
   prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
-  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.7, high_lcost 0.3/
+  prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.90, high_lcost 0.10/
 $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" /low_co2 0 , medium_co2 15, high_co2 150/
-  dem_level(S_dlev)      "factor for different demand levels)"           / low_dlev 0.8, medium_dlev 0.9, high_dlev 1/
-  L_cost(S_lcost)        "Cost for 0.01 line capacity"                        / low_lcost 150, high_lcost 350/ 
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" / low_co2 0 , medium_co2 25, high_co2 150 /
+  dem_level(S_dlev)      "factor for different demand levels"               / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1 /
+  L_cost(S_lcost)        "Cost for 0.01 line capacity"                      / low_lcost 150, high_lcost 750 /
 ;
   Table
   qPeak(D,S_dloc)    "peak consumption at consumer D in scenario s_dloc"
@@ -68,10 +68,10 @@ $endif
   genIsRES(G)            "renewable generator"                           / 7 1, 8 1 /
   genAtNode(G)           "location (node)"                               / 1 1, 2 1, 3 1, 4 2, 5 2, 6 2, 7 1, 8 2 /
   buVarInv(S_co2)        "Variable cost per MWh for backup"
-  genFixInv(G)           "investment cost"                               / 1 1000000, 2 50000, 3 28000, 4 1000000, 5 50000, 6 28000, 7 93000, 8 110000 /
+  genFixInv(G)           "investment cost"                               / 1 1000000, 2 58000, 3 32000, 4 1000000, 5 58000, 6 32000, 7 78000, 8 93000 /
   buAtNode(B)            "location (node) of backup"                     / 1 1, 2 2 /
   avail(T,G)             "availability of generators"
-  rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 19, 3 19, 4 10.4, 5 19, 6 19, 7 0, 8 0/
+  rawPrice(G)            "price of raw materials (euro per MWh)"         /1 10.4, 2 14, 3 14, 4 10.4, 5 14, 6 14, 7 0, 8 0/
   efficFactor(G)         "efficiency factor for conventional generation" /1 0.45, 2 0.55, 3 0.35, 4 0.45, 5 0.55, 6 0.35, 7 1, 8 1/
   emissFactor(G)         "emission factor"                               /1 0.800, 2 0.340, 3 0.535, 4 0.800, 5 0.340, 6 0.535, 7 0, 8 0/
   co2Cost(G, S_co2)      "CO2 cost for 1 MWh of conventional production per generator"
@@ -94,7 +94,7 @@ $endif
   dRef(T,S_dlev)                "reference demand per season and scenario"
   pRef(T)                        "reference price"
   ;
-  
+
 
 
   lineIsNew(L)     = 1 ;
@@ -129,22 +129,22 @@ $endif
 
 *** Read.csv Input Data
 
-$call csv2gdx Data/Input_avail.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_avail_400.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load avail
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load periodScale
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=dBase Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=dBase Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load dBase
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load pRef
 $gdxin

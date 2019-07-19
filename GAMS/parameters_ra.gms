@@ -1,4 +1,4 @@
-  Parameters
+Parameters
 
 *welfare
   wf_sp                  "spot market welfare"
@@ -7,7 +7,7 @@
   wf_all                 "final welfare"
   wf_rn     "welfare witout risk adjustment"
   risk_adjustment "value of worst case adjustment in objective function"
-  
+
 *generation and demand
   SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)          "demand Spot"
   SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)        "generation amount Spot"
@@ -43,7 +43,7 @@
   consumerSurplus(D,S_co2,S_dloc,S_dlev,S_lcost)                "Consumer surplus in scenario s"
   totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost)                   "total consumer surplus in scenario s"
   expConsSurpl                                  "expected total consumer surplus"
-  
+
 * Risk Aversion
   VAR_RD_FIX        "value at risk redispatch (cutoff point for tale)"
   ETA_RD_FIX(S_co2,S_dloc,S_dlev,S_lcost)   "eta redispatch stage"

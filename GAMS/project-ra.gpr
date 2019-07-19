@@ -3,9 +3,6 @@
 [RP:OUTPUTWRITER]
 1=
 
-[RP:PARAMETERS_2NODES]
-1=
-
 [RP:2NODES]
 1=
 
@@ -23,11 +20,11 @@ PlaneRownr=-1
 
 [GDXDISP: Results_genInv Par 2]
 PlaneDim=0
-RowDim=2
+RowDim=1
 Squeeze=1
 SqTrail0=0
 Order=1,2
-Decim=7
+Decim=3
 PlaneRownr=-1
 
 [GDXDISP: Results_lineInv Par 1]
@@ -230,20 +227,20 @@ PlaneRownr=-1
 
 [GDXDISP: consObjA Par 2]
 PlaneDim=0
-RowDim=2
+RowDim=1
 Squeeze=1
 SqTrail0=0
-Order=1,2
+Order=2,1
 Decim=7
 PlaneRownr=-1
 
 [GDXDISP: consObjB Par 2]
 PlaneDim=0
-RowDim=2
+RowDim=1
 Squeeze=1
 SqTrail0=0
-Order=1,2
-Decim=7
+Order=2,1
+Decim=1
 PlaneRownr=-1
 
 [GDXDISP: ConsInZone Par 2]
@@ -619,49 +616,356 @@ PlaneRownr=-1
 1=-gdx=outputRA
 2=
 
-[RP:INPUT_2NODES]
-1=
-
 [RP:2NODES_RENEWABLE]
 1=-gdx = output_original
 2=-gdx = test
 3=
 
+[RP:23042018_LOOP_NODAL]
+1=
+
+[GDXDISP: angle Var 6]
+PlaneDim=0
+RowDim=6
+Squeeze=1
+SqTrail0=0
+Order=1,2,3,4,5,6,7
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: co2Cost Par 2]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1,2
+Decim=1
+PlaneRownr=-1
+
+[GDXDISP: co2Price Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
 [RP:PARAMETERS_RA]
 1=
 
-[RP:INPUT_RA]
+[GDXDISP: genVarInv Par 2]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1,2
+Decim=2
+PlaneRownr=-1
+
+[GDXDISP: rawPrice Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: efficFactor Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[RP:PARAMETERS_2NODES]
+1=
+
+[GDXDISP: lineFixInv Par 2]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1,2
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: lineB Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: lineEnd Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: lineUB Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: GenInZone Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: genFixInv Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: fixDem Equ 6]
+PlaneDim=4
+RowDim=2
+Squeeze=1
+SqTrail0=0
+Order=7,5,4,6,2,3,1
+Decim=3
+PlaneRownr=-1
+PlaneFilter1=Level
+PlaneFilter2=medium_dlev
+PlaneFilter3=base
+PlaneFilter4=low_lcost
+
+[GDXDISP: dem_level Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: qPeak Par 2]
+PlaneDim=0
+RowDim=2
+Squeeze=1
+SqTrail0=0
+Order=1,2
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: consObjB Par 4]
+PlaneDim=2
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=3,4,2,1
+Decim=2
+PlaneRownr=4
+PlaneFilter1=base
+PlaneFilter2=medium_dlev
+
+[GDXDISP: consObjA Par 4]
+PlaneDim=2
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=4,3,2,1
+Decim=7
+PlaneRownr=4
+PlaneFilter1=medium_dlev
+PlaneFilter2=base
+
+[GDXDISP: ConsInZone Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: buVarInv Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: fixGen Equ 6]
+PlaneDim=1
+RowDim=5
+Squeeze=1
+SqTrail0=0
+Order=7,2,3,4,5,6,1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: S_co2 Set 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: S_dlev Set 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: S_dloc Set 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: S_lcost Set 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: prob_dlev Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: prob_dloc Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: prob_lcost Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: prob_co2 Par 1]
+PlaneDim=0
+RowDim=1
+Squeeze=1
+SqTrail0=0
+Order=1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: f_sp Var 6]
+PlaneDim=1
+RowDim=5
+Squeeze=1
+SqTrail0=0
+Order=7,2,3,4,5,6,1
+Decim=7
+PlaneRownr=-1
+
+[GDXDISP: prob_scen Par 4]
+PlaneDim=0
+RowDim=4
+Squeeze=1
+SqTrail0=0
+Order=1,2,3,4
+Decim=2
+PlaneRownr=-1
+
+[GDXDISP: Loop_welfare_all Par 2]
+PlaneDim=0
+RowDim=2
+Squeeze=1
+SqTrail0=0
+Order=1,2
+Decim=1
+PlaneRownr=-1
+
+[GDXDISP: f_rd Var 6]
+PlaneDim=0
+RowDim=6
+Squeeze=1
+SqTrail0=0
+Order=1,2,3,4,5,6,7
+Decim=7
+PlaneRownr=-1
+
+[RP:INPUT_2NODES]
 1=
 
 [RP:OUTPUT_WRITER_RA]
 1=
 
-[RP:23042018_LOOP_NODAL]
-1=
+[RP:MAIN_RA]
+1=-gdx=test_03
+2=-gdx=test_02
+3=-gdx=test_01
+4=
 
 [RP:MODEL_RA]
 1=
 
-[RP:MAIN_RA]
+[RP:INPUT_RA]
 1=
 
 [MRUFILES]
-1=C:\Users\ba62very\Desktop\GAMS_test_RA\output_original.gdx
-2=C:\Users\ba62very\Desktop\GAMS_test_RA\test.gdx
-3=C:\Users\ba62very\Desktop\GAMS_test_RA\Modell_2Nodes.lst
-4=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_renewable.gms
-5=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_renewable.lst
-6=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\Input_2Nodes.gms
-7=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\test.gdx
-8=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_conventional.gms
+1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.lst
+2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\regulatory_uncertainty\GAMS\Parameters_2Nodes.gms
+3=C:\Users\ba62very\Desktop\GAMS_test_RA\output_original.gdx
+4=C:\Users\ba62very\Desktop\GAMS_test_RA\test.gdx
+5=C:\Users\ba62very\Desktop\GAMS_test_RA\Modell_2Nodes.lst
+6=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_renewable.gms
+7=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\2Nodes_renewable.lst
+8=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\Input_2Nodes.gms
+9=C:\Users\ba62very\MyGit\uncertainties-price-zones\GAMS\test.gdx
 
 [OPENWINDOW_1]
-FILE0=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
-FILE1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
-FILE2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
-FILE3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\output_writer_ra.gms
-FILE4=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\parameters_ra.gms
-FILE5=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
+FILE0=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\regulatory_uncertainty\GAMS\Input_2Nodes.gms
+FILE1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\regulatory_uncertainty\GAMS\Results_60_con_1_new.gdx
+FILE2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
+FILE3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
+FILE4=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
+FILE5=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\output_writer_ra.gms
+FILE6=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\parameters_ra.gms
+FILE7=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_01.gdx
+FILE8=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_02.gdx
+FILE9=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
 MAXIM=1
 TOP=50
 LEFT=50

@@ -115,48 +115,24 @@ put "\end{tabular}" /;
 put "\end{table}" /;
 put "\clearpage" /;
 
-
-put "\begin{table}[htb]\caption{Overview Table}"/;
-put "\begin{tabular}{lrrrrrrr}" /;
+put "\begin{table}[htb]\caption{Expected PS and CS (\euro/MWh) }"/;
+put "\begin{tabular}{l|rrrrrr|rr|rr}" /;
 put "\toprule" /;
-put " weight &     totalInv & BU  &  BU   &    Line   &  Spotprice   &  delta Welf & price RA \\" /;
-put "        &      MW      & MW  &  MW    &    MW     &  \euro/MWh   &  T\euro     &   T\euro   \\" /;
-put "        &      NS      & N   &  S    &    N-S    &  NS          &   NS        &   NS    \\" /;
+put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &  CS  & CS   \\" /;
+put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &  N   &  S   \\" /;
 put "\midrule" /;
 loop(Weight,
   put ((Weight.val-1)*0.2),
-         "&", Results_totalInv(Weight),        
-         "&", Results_buInv(Weight, "1"),
-         "&", Results_buInv(Weight, "2"),
-         "&", Results_lineInv(Weight),
-         "&", Results_expPriceSpot(Weight),
-         "&", ((Results_welfare_all(Weight) - Results_welfare_all("1")) /1000),
-         "&", ((Results_risk_adjustment(Weight))/1000),         
-  "\\" /;
-  );
-put "\bottomrule" /;
-put "\end{tabular}" /;
-put "\end{table}" /;
-put "\clearpage" /;
-
-put "\begin{table}[htb]\caption{Expected PS and CS (\euro, difference to $\omega = 0$) }"/;
-put "\begin{tabular}{l|rrrrrrrrrr}" /;
-put "\toprule" /;
-put " weight &  CCGT &   GT &  Wind  & total &  CCGT &   GT &   Wind &   total  &  CS  & CS   \\" /;
-put "        &     N &   N  &    N   &  N    &    S  &    S &       S &    S    &  N  &  S    \\" /;
-put "\midrule" /;
-loop(Weight,
-  put ((Weight.val-1)*0.2),
-         "&", ( (Results_exp_rents_ps("1","2") - Results_exp_rents_ps(Weight,"2"))/1000),
-         "&", ( (Results_exp_rents_ps("1","3") - Results_exp_rents_ps(Weight,"3"))/1000),
-         "&", ( (Results_exp_rents_ps("1","3") - Results_exp_rents_ps(Weight,"7"))/1000),
-         "&", ( (Results_exp_rents_ps_node("1","1") - Results_exp_rents_ps_node(Weight,"1"))/1000),         
-         "&", ( (Results_exp_rents_ps("1","5") - Results_exp_rents_ps(Weight,"5"))/1000),
-         "&", ( (Results_exp_rents_ps("1","6") - Results_exp_rents_ps(Weight,"6"))/1000),
-         "&", ( (Results_exp_rents_ps("1","8") - Results_exp_rents_ps(Weight,"8"))/1000),
-         "&", ( (Results_exp_rents_ps_node("1","2") - Results_exp_rents_ps_node(Weight,"2"))/1000),
-         "&", ( (Results_exp_rents_cs("1","1") - Results_exp_rents_cs(Weight,"1"))/1000),
-         "&", ( (Results_exp_rents_cs("1","2") - Results_exp_rents_cs(Weight,"2"))/1000), 
+         "&", ((Results_exp_rents_ps(Weight,"1"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"2"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"3"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"4"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"5"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"6"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"7"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"8"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "1"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "2"))/1000),
   "\\" /;
   );
 put "\bottomrule" /;
