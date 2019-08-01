@@ -20,21 +20,21 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 6  /
-         L "indices for power lines"     / 1 * 13 /
-         LineInvest                      / 1 * 13 /
+         Weight                          / 1 * 1  /
+         L "indices for power lines"     / 3 * 3 /
+         LineInvest                      / 3 * 3 /
 ;
 
 Scalar
 *Set xscale to: lowest value of lineinvest minus 1
 *               --> e.g. LineInvest / 4 * 6 / -->  xscale / 3 /
-         xscale                          / 0 /
+         xscale                          / 2 /
 ;
 
 ***--------------------------------------------------------------------------***
