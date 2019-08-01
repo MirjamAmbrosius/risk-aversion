@@ -26,13 +26,15 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 6  /
-         L "indices for power lines"     / 1 * 13 /
-         LineInvest                      / 1 * 13 /
+         Weight                          / 1 * 1  /
+         L "indices for power lines"     / 3 * 3 /
+         LineInvest                      / 3 * 3 /
 ;
 
 Scalar
-         xscale                          / 0 /
+*Set xscale to: lowest value of lineinvest minus 1
+*               --> e.g. LineInvest / 4 * 6 / -->  xscale / 3 /
+         xscale                          / 2 /
 ;
 
 ***--------------------------------------------------------------------------***
@@ -343,7 +345,7 @@ $offorder
   Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G)) +  sum(B, Results_buInv(Weight,B));
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
-  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost) )        ;
+  Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost) )        ;
   Results_wf_rn(Weight)                       = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_wf_rn(Weight) );
   Results_risk_adjustment(Weight)             = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_risk_adjustment(Weight) );
   Results_exp_rents_cs(Weight,D)              = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_exp_rents_cs(Weight,LineInvest,D) )         ;
