@@ -8,6 +8,17 @@ Parameters
   wf_rn     "welfare witout risk adjustment"
   risk_adjustment "value of worst case adjustment in objective function"
 
+*costs
+ Cost_sc_sp_g(S_co2,S_dloc,S_dlev,S_lcost)         "variable generation costs per scenario"
+ Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost)         "redispatch costs existing capacity per scenario"
+ Cost_sc_rd_b(S_co2,S_dloc,S_dlev,S_lcost)         "redispatch costs backup capacity per scenario"
+ Cost_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)           "total congestion rent per scenario"
+ Cost_fc_l(S_lcost)                                "fixed line investment cost"
+ Cost_fc_b                                         "fixed backup investment cost"
+ Cost_fc_g                                         "fixed generation capacity investment cost"
+ rediCost(S_co2,S_dloc,S_dlev,S_lcost)             "total congestion management cost (line invest, redi, bu)"
+ 
+
 *generation and demand
   SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)          "demand Spot"
   SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)        "generation amount Spot"
@@ -31,6 +42,9 @@ Parameters
   Loop_exp_rents_PS(Weight,LineInvest,G)        "expected producer surplus"
   Loop_rents_scen_CS(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) "consumer rents per scenario"
   Loop_rents_scen_PS(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) "producer rents per scenario"
+  Loop_cost_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "generation redispatch cost per scenario"
+  Loop_cost_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "bu redispatch cost per scenario"
+  Loop_cost_sc_cr(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "congestion rent per scenario"
 
 
   total_generation(S_co2,S_dloc,S_dlev,S_lcost)               "total generation by private firms"

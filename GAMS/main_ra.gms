@@ -20,7 +20,7 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
@@ -134,6 +134,68 @@ $offtext
 ***                        CALCULATION OF RESULTS                            ***
 ***--------------------------------------------------------------------------***
 
+*Calculate variable generation costs per scenario (fuel + CO2)
+  Cost_sc_sp_g(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost)   =
+        sum((G,T),genVarInv(G, S_co2)
+        * SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)
+        * periodScale(T)
+        * YEAR );
+        
+*Calculate redispatch costs existing capacity per scenario
+  Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost)  =
+        sum((G,T), genVarInv(G,S_co2)
+        * (RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)
+        - SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost))
+        * periodScale(T))
+        * Year ;
+
+*Calculate redispatch costs of backup capacity per scenario
+  Cost_sc_rd_b(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
+        sum((B,T), buVarInv(S_co2)
+        * (RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost))
+        * periodScale(T))
+        * Year ;
+
+*Calculate spot price
+  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
+        (consObjA(D,T,S_dloc,S_dlev)
+        - consObjB(D,T,S_dloc,S_dlev)
+        * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost));
+
+*Calculate total congestion rent per scenario
+  Cost_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
+        sum((L,T)$lineB(L), YEAR
+        * periodScale(T)
+        * abs(SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost) )
+        * abs(sum(D$(lineStart(L) =D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))
+        - sum(D$(lineEnd(L) = D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))));
+        
+*Calculate total line investment cost
+  Cost_fc_l(S_lcost) = sum(L$SP_CAP_L(L),lineFixInv(L,S_lcost)) ;
+
+*Calculate total backup investment cost
+  Cost_fc_b  = sum(B, buFixInv * RD_CAP_B(B)) ;
+  
+*Calculate total generation capacity investment cost
+  Cost_fc_g = sum(G, genFixInv(G) * SP_CAP_G(G) ) ;
+
+*Calculate all network and backup investment and redispatch costs per scenario
+  rediCost(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
+        sum((G,T), genVarInv(G,S_co2)
+        * (RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)
+        - SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost))
+        * periodScale(T)) * YEAR
+        + sum((B,T), buVarInv(S_co2) * RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost)
+        * periodScale(T) ) * YEAR
+        + sum(B, buFixInv * RD_CAP_B(B))
+        + sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost));
+
+*Calculate expected network & backup investment and redispatch costs
+*  totalRediCost                  = sum(S$probability(S), probability(S) * ( sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) )
+*                                  + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) )
+*                                  ) * YEAR
+*                                  + sum(B, buFixInv * RD_CAP_B(B))
+*                                  + sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
 
 * Welfare after redispatch
 
@@ -173,7 +235,6 @@ $offtext
   total_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T), RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_bu_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((B,T),RD_GEN_B(B,T,S_co2,S_dloc,S_dlev,S_lcost));
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T),SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
-  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = (consObjA(D,T,S_dloc,S_dlev) - consObjB(D,T,S_dloc,S_dlev) * SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost));
   priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_scen(S_co2,S_dloc,S_dlev,S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
   expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
   price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) $prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = sum(Z$(Z.val = GenInZone(G)), ZFKL.m(Z,T,S_co2,S_dloc,S_dlev,S_lcost) / Year / periodScale(T) / prob_scen(S_co2,S_dloc,S_dlev,S_lcost));
@@ -190,8 +251,10 @@ $offtext
   Loop_expPriceSpot(Weight,LineInvest)          = expPriceSpot ;
   Loop_wf_rn(Weight)                            = wf_rn;
   Loop_risk_adjustment(Weight)                  = risk_adjustment;
-*  Loop_expConsSurpl(Weight, LineInvest)         = expConsSurpl;
   Loop_welfare_scenario_all(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost)  = wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost);
+  Loop_cost_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) = Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost);
+  Loop_cost_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) = Cost_sc_rd_b(S_co2,S_dloc,S_dlev,S_lcost);
+  Loop_cost_sc_cr(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) = Cost_sc_cr(S_co2,S_dloc,S_dlev,S_lcost);
 
 *** Consumer and Producer Surplus
   Loop_exp_rents_CS(Weight,LineInvest,D) = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
@@ -214,6 +277,8 @@ $offtext
                                             * YEAR ;
   Loop_rents_scen_PS(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) = sum((T), ( Price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) - genVarInv(G,S_co2) ) * SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T) ) * YEAR
                                                                                          - genFixInv(G) * SP_CAP_G(G);
+
+
 
 
 ***--------------------------------------------------------------------------***
@@ -256,6 +321,11 @@ $offtext
   Results_exp_rents_ps(Weight,G)
   Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost)
   Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_cost_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_cost_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_cost_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost)
   ;
 
 
@@ -280,4 +350,9 @@ $offorder
   Results_exp_rents_ps(Weight,G)              = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_exp_rents_ps(Weight,LineInvest,G) )         ;
   Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_rents_scen_cs(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) );
   Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_rents_scen_ps(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(D,Results_rents_scen_cs(Weight,D,S_co2,S_dloc,S_dlev,S_lcost));
+  Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(G,Results_rents_scen_ps(Weight,G,S_co2,S_dloc,S_dlev,S_lcost));
+  Results_cost_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_cost_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_cost_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_cost_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_cost_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale=maxWelfare(Weight)), Loop_cost_sc_cr(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
 $include output_writer_ra.gms

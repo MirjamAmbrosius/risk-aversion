@@ -15,7 +15,7 @@ if __name__ == "__main__":
     else:
         ws = GamsWorkspace()
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/risk-aversion/GAMS/test_400_1_e_v02.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/main_ra.gdx")
 
     # get number of zones
     node_to_zone_dict = dict( (rec.keys[0], rec.value) for rec in output_ra["NodeInZone"] )
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     # store welfare results in a multidimensional dictionary
     scen_2_welf_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_welfare_scenario_all"] )
     scen_2_prob_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["prob_scen"] )
-    #scen_2_cs_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_cs"] ) 
-    #scen_2_ps_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_ps"] )
+    scen_2_cs_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_cs"] ) 
+    scen_2_ps_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_ps"] )
 
 ### Plot welfare results ###
     def plot_welfare(scen_2_welf_dict):
@@ -124,8 +124,8 @@ if __name__ == "__main__":
         legend = plt.legend(loc='lower center', bbox_to_anchor=(0.5, -0.01), ncol=3)
         plt.savefig("C:/Users/ba62very/MyGit/risk-aversion/GAMS/solution_handling/plots/CDF_" + str(rent_type) + "_" + str(no_of_zones) + ".png")
         plt.close()
-    #plot_cdf_rents(scen_2_cs_dict,"cs")
-    #plot_cdf_rents(scen_2_ps_dict,"ps")
+    plot_cdf_rents(scen_2_cs_dict,"cs")
+    plot_cdf_rents(scen_2_ps_dict,"ps")
 
 
 

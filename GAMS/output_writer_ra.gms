@@ -82,6 +82,33 @@ put "Demand Ratio (scenario benchmark):", qPeak("1","base"), " at node 1 and ", 
 put "Demand Ratio (scenario south):", qPeak("1","south"), " at node 1 and ", qPeak("2","south"), " at node 2", "\\" /;
 
 
+
+put "\begin{table}[htb]\caption{Overview}"/;
+put "\begin{tabular}{l|rrrrrrr}" /;
+put "\toprule" /;
+put " weight &totalInv & BU       &  BU     &    Line   &  Spotprice    &  $\Delta$ Welf & price RA \\" /;
+put "        &      MW &       MW &      MW &      MW   &   \euro/MWh   &         T\euro &  T\euro   \\" /;
+put "        &     NS &       N  &      S  &     NS   &      NS       &       NS       &      NS    \\" /;
+put "\midrule" /;
+loop(Weight,
+  put ((Weight.val-1)*0.2),
+         "&", Results_totalInv(Weight),
+         "&", Results_buInv(Weight, "1"),
+         "&", Results_buInv(Weight, "2"),
+         "&", Results_lineInv(Weight),
+         "&", Results_expPriceSpot(Weight),
+         "&", ((Results_welfare_all(Weight)-Results_welfare_all("1"))/1000),
+         "&", ((Results_risk_adjustment(Weight))/1000),
+         
+  "\\" /;
+  );
+put "\bottomrule" /;
+put "\end{tabular}" /;
+put "\end{table}" /;
+put "\clearpage" /;
+
+
+
 put "\begin{table}[htb]\caption{Summary of generation capacity}"/;
 put "\begin{tabular}{l|rrrrrr|rr|rr|rr|rrrr}" /;
 put "\toprule" /;
@@ -115,24 +142,22 @@ put "\end{tabular}" /;
 put "\end{table}" /;
 put "\clearpage" /;
 
-put "\begin{table}[htb]\caption{Expected PS and CS (\euro/MWh) }"/;
-put "\begin{tabular}{l|rrrrrr|rr|rr}" /;
+put "\begin{table}[htb]\caption{Expected Producer and Consumer Surplus (1000\euro, difference to $\omega = 0$) }"/;
+put "\begin{tabular}{lrrrrrrrr}" /;
 put "\toprule" /;
-put " weight &    Coal &     CCGT &      GT &   Coal  &   CCGT &      GT &    Wind &    Wind  &  CS  & CS   \\" /;
-put "        &       N &       N  &      N  &      S  &      S &       S &       N &       S  &  N   &  S   \\" /;
+put " weight &         CCGT &      GT &     CCGT &      GT &    Wind &    Wind  &  CS  & CS   \\" /;
+put "        &           N  &      N  &        S &       S &       N &       S  &  N   &  S   \\" /;
 put "\midrule" /;
 loop(Weight,
   put ((Weight.val-1)*0.2),
-         "&", ((Results_exp_rents_ps(Weight,"1"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"2"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"3"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"4"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"5"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"6"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"7"))/1000),
-         "&", ((Results_exp_rents_ps(Weight,"8"))/1000),
-         "&", ((Results_exp_rents_cs(Weight, "1"))/1000),
-         "&", ((Results_exp_rents_cs(Weight, "2"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"2")-Results_exp_rents_ps("1","2"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"3")-Results_exp_rents_ps("1","3"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"5")-Results_exp_rents_ps("1","5"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"6")-Results_exp_rents_ps("1","6"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"7")-Results_exp_rents_ps("1","7"))/1000),
+         "&", ((Results_exp_rents_ps(Weight,"8")-Results_exp_rents_ps("1","8"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "1")-Results_exp_rents_cs("1", "1"))/1000),
+         "&", ((Results_exp_rents_cs(Weight, "2")-Results_exp_rents_cs("1", "2"))/1000),
   "\\" /;
   );
 put "\bottomrule" /;
@@ -157,6 +182,33 @@ loop(Weight,
          system.tab, Results_lineInv(Weight)/;
   );
 ;
+
+file welfare /welfare-components.txt/;
+put welfare;
+put "weight", system.tab, "scen-length", system.tab, "welfare", system.tab, "CS", system.tab, "PS", system.tab, "redi-g", system.tab, "redi-bu", system.tab, "CR" /;
+loop(Weight,
+  loop(S_co2,
+    loop(S_dloc,
+      loop(S_dlev,
+        loop(S_lcost,
+          put((Weight.val-1)*0.2),
+                system.tab, prob_scen(S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_cost_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_cost_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_cost_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+                /;
+          );
+        );
+      );
+    );
+  );
+;
+                
+    
+    
 
 
 
