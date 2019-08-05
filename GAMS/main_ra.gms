@@ -26,9 +26,9 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                          / 1 * 1  /
-         L "indices for power lines"     / 3 * 3 /
-         LineInvest                      / 3 * 3 /
+         Weight                          / 1 * 6  /
+         L "indices for power lines"     / 3 * 7 /
+         LineInvest                      / 3 * 7 /
 ;
 
 Scalar

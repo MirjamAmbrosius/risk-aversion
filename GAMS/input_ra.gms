@@ -1,7 +1,7 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 *  24 /
+  T    "indices for times"                               / 1 *  400 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
@@ -129,22 +129,22 @@ $endif
 
 *** Read.csv Input Data
 
-$call csv2gdx Data/Input_avail.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_avail_400.txt id=avail Index=1 Value='(2..9)' UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load avail
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=periodScale Index=1 Value=2 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load periodScale
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=dBase Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=dBase Index=1 Value=3 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load dBase
 $gdxin
 
-$call csv2gdx Data/Input_hourly.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
+$call csv2gdx Data/Input_hourly_400.txt id=pRef Index=1 Value=4 UseHeader=Y StoreZero=Y FieldSep=Tab Output=input.gdx
 $gdxin input.gdx
 $load pRef
 $gdxin
