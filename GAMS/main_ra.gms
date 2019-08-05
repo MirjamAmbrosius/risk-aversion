@@ -142,7 +142,7 @@ $offtext
         * SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)
         * periodScale(T)
         * YEAR );
-        
+
 *Calculate redispatch costs existing capacity per scenario
   Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost)  =
         sum((G,T), genVarInv(G,S_co2)
@@ -171,13 +171,13 @@ $offtext
         * abs(SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost) )
         * abs(sum(D$(lineStart(L) =D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))
         - sum(D$(lineEnd(L) = D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))));
-        
+
 *Calculate total line investment cost
   Cost_fc_l(S_lcost) = sum(L$SP_CAP_L(L),lineFixInv(L,S_lcost)) ;
 
 *Calculate total backup investment cost
   Cost_fc_b  = sum(B, buFixInv * RD_CAP_B(B)) ;
-  
+
 *Calculate total generation capacity investment cost
   Cost_fc_g = sum(G, genFixInv(G) * SP_CAP_G(G) ) ;
 
@@ -239,7 +239,8 @@ $offtext
   total_spot_generation(S_co2,S_dloc,S_dlev,S_lcost) = sum((G,T),SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost));
   priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_scen(S_co2,S_dloc,S_dlev,S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
   expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
-  price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) $prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = sum(Z$(Z.val = GenInZone(G)), ZFKL.m(Z,T,S_co2,S_dloc,S_dlev,S_lcost) / Year / periodScale(T) / prob_scen(S_co2,S_dloc,S_dlev,S_lcost));
+  price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) $prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = sum(D$(D.Val = GenInZone(G)),  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost) ) ;
+
 
 
 ***--------------------------------------------------------------------------***
