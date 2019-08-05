@@ -110,7 +110,8 @@ $ifthen '%no_of_zones%' == one
   Parameters
   ConsInZone(D)  "consumer in zone"      / 1 1, 2 1 /
   GenInZone(G)   "generation in zone"    / 1 1, 2 1, 3 1, 4 1, 5 1, 6 1, 7 1, 8 1 /
-  NodeInZone(N)                          / 1 1, 2 1 /    ;
+  NodeInZone(N)                          / 1 1, 2 1 /                                ;
+
 $else
   lineInter(L) = 1 ;
   Parameters
