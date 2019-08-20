@@ -75,7 +75,7 @@ put "\end{table}" /;
 
 put "\clearpage" /;
 
-put "Transmission Investment Cost (high):", (L_cost("high_lcost")*100), "\euro/MWh", "\\" /; 
+put "Transmission Investment Cost (high):", (L_cost("high_lcost")*100), "\euro/MWh", "\\" /;
 put "Transmission Investment Cost (low):", (L_cost("low_lcost")*100), "\euro/MWh", "\\" /;
 put "Demand Ratio (scenario north):", qPeak("1","north"), " at node 1 and ", qPeak("2","north"), " at node 2", "\\" /;
 put "Demand Ratio (scenario benchmark):", qPeak("1","base"), " at node 1 and ", qPeak("2","base"), " at node 2", "\\" /;
@@ -99,7 +99,7 @@ loop(Weight,
          "&", Results_expPriceSpot(Weight),
          "&", ((Results_welfare_all(Weight)-Results_welfare_all("1"))/1000),
          "&", ((Results_risk_adjustment(Weight))/1000),
-         
+
   "\\" /;
   );
 put "\bottomrule" /;
@@ -134,7 +134,7 @@ loop(Weight,
          "&", ((Results_welfare_all(Weight))/1000),
          "&", ((Results_wf_rn(Weight))/1000),
          "&", ((Results_risk_adjustment(Weight))/1000),
-         
+
   "\\" /;
   );
 put "\bottomrule" /;
@@ -194,11 +194,11 @@ loop(Weight,
           put((Weight.val-1)*0.2),
                 system.tab, prob_scen(S_co2,S_dloc,S_dlev,S_lcost),
                 system.tab, Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost),
-                system.tab, Results_rents_scen_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost),
-                system.tab, Results_rents_scen_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost),
-                system.tab, Results_cost_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost),
-                system.tab, Results_cost_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost),
-                system.tab, Results_cost_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+                system.tab, Results_rents_sc_total_cs(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_rents_sc_total_ps(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_costs_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_costs_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost),
+                system.tab, Results_rents_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost)
                 /;
           );
         );
@@ -206,9 +206,9 @@ loop(Weight,
     );
   );
 ;
-                
-    
-    
+
+
+
 
 
 

@@ -22,7 +22,7 @@
   epsilon        elasticity of demand                  /    -0.10 /
   Year           Hours per year                        /  8760    /
   buFixInv       Annuity per 1 MW backup capacity      / 16000    /
-  DSM            Load Shedding costs                   /  3000    /
+*  DSM            Load Shedding costs                   /  3000    /
   L_step         Capacity steps for lines              /   0.05   /
   ;
 

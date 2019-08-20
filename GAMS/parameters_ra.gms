@@ -12,12 +12,11 @@ Parameters
  Cost_sc_sp_g(S_co2,S_dloc,S_dlev,S_lcost)         "variable generation costs per scenario"
  Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost)         "redispatch costs existing capacity per scenario"
  Cost_sc_rd_b(S_co2,S_dloc,S_dlev,S_lcost)         "redispatch costs backup capacity per scenario"
- Cost_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)           "total congestion rent per scenario"
- Cost_fc_l(S_lcost)                                "fixed line investment cost"
+ Cost_sc_rd_l(S_co2,S_dloc,S_dlev,S_lcost)         "fixed line investment cost"
  Cost_fc_b                                         "fixed backup investment cost"
  Cost_fc_g                                         "fixed generation capacity investment cost"
  rediCost(S_co2,S_dloc,S_dlev,S_lcost)             "total congestion management cost (line invest, redi, bu)"
- 
+ Rent_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)          "total congestion rent per scenario"
 
 *generation and demand
   SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)          "demand Spot"
@@ -40,11 +39,12 @@ Parameters
   Loop_risk_adjustment(Weight)                   "value of risk adjustment"
   Loop_exp_rents_CS(Weight,LineInvest,D)        "expected consumer surplus"
   Loop_exp_rents_PS(Weight,LineInvest,G)        "expected producer surplus"
-  Loop_rents_scen_CS(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) "consumer rents per scenario"
-  Loop_rents_scen_PS(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) "producer rents per scenario"
-  Loop_cost_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "generation redispatch cost per scenario"
-  Loop_cost_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "bu redispatch cost per scenario"
-  Loop_cost_sc_cr(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "congestion rent per scenario"
+  Loop_rents_sc_CS(Weight, LineInvest,D,S_co2,S_dloc,S_dlev,S_lcost) "consumer rents per scenario"
+  Loop_rents_sc_PS(Weight, LineInvest,G,S_co2,S_dloc,S_dlev,S_lcost) "producer rents per scenario"
+  Loop_rents_sc_cr(Weight, LineInvest,  S_co2,S_dloc,S_dlev,S_lcost) "congestion rent per scenario"
+  Loop_costs_sc_rd_l(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "network cost per scenario"
+  Loop_costs_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "generation redispatch cost per scenario"
+  Loop_costs_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "bu redispatch cost per scenario"
 
 
   total_generation(S_co2,S_dloc,S_dlev,S_lcost)               "total generation by private firms"
