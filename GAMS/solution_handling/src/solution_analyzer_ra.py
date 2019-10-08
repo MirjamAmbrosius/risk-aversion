@@ -15,7 +15,7 @@ if __name__ == "__main__":
     else:
         ws = GamsWorkspace()
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/main_ra.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/one_Zone_0410_l001_w99.gdx")
 
     # get number of zones
     node_to_zone_dict = dict( (rec.keys[0], rec.value) for rec in output_ra["NodeInZone"] )
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     # store welfare results in a multidimensional dictionary
     scen_2_welf_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_welfare_scenario_all"] )
     scen_2_prob_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["prob_scen"] )
-    scen_2_cs_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_cs"] ) 
-    scen_2_ps_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_scen_total_ps"] )
+    scen_2_cs_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_sc_total_cs"] ) 
+    scen_2_ps_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_rents_sc_total_ps"] )
 
 ### Plot welfare results ###
     def plot_welfare(scen_2_welf_dict):
@@ -62,11 +62,13 @@ if __name__ == "__main__":
                 plt.savefig("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/solution_handling/plots/welfare_" + str(no_of_zones) + "_" + str((weight_counter-1)*0.2) + ".png")
                 plt.close()
             weight_counter +=1
-    #plot_welfare(scen_2_welf_dict)
+#    plot_welfare(scen_2_welf_dict)
 
 ######################## Plot CDF welfare ###########################
     def plot_cdf(scen_2_welf_dict,scen_2_prob_dict):
         print("Plotting CDF Welfare graph")
+        file = open("welfare"+ str(no_of_zones) + "zone.txt","w")
+        file.write("Weight\t" + "Welfare\t" + "Probability\t" + "CumProb\n")
         plt.figure(figsize=(10,5), dpi=80)
         plt.grid(True)
         plt.title("Cumulative Distribution Function Welfare (no. of zones: " + str(no_of_zones) + ")")
@@ -87,6 +89,9 @@ if __name__ == "__main__":
                 scen,welf_prob_list = zip(*welf_red_scen_lists)
                 welf,prob=zip(*welf_prob_list)
                 cum_prob = np.cumsum(prob)
+                for counter in range(0,len(scen)):
+                    file.write(str(round((weight_counter-1)*0.2,2)) + "\t" + str(welf[int(counter)]) + "\t" + str(prob[int(counter)]) + "\t" +  str(cum_prob[int(counter)]) + "\n")
+                file.close
                 plt.step(welf, cum_prob, label = "Weight " + str(round((weight_counter-1)*0.2,2)))
             weight_counter +=1
         legend = plt.legend(loc='lower center', bbox_to_anchor=(0.5, -0.01), ncol=3)
@@ -124,8 +129,8 @@ if __name__ == "__main__":
         legend = plt.legend(loc='lower center', bbox_to_anchor=(0.5, -0.01), ncol=3)
         plt.savefig("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/solution_handling/plots/CDF_" + str(rent_type) + "_" + str(no_of_zones) + ".png")
         plt.close()
-    plot_cdf_rents(scen_2_cs_dict,"cs")
-    plot_cdf_rents(scen_2_ps_dict,"ps")
+#    plot_cdf_rents(scen_2_cs_dict,"cs")
+#    plot_cdf_rents(scen_2_ps_dict,"ps")
 
 
 
@@ -136,8 +141,8 @@ if __name__ == "__main__":
     ### Generation and Transmission Capacity Investment ###
         # store investment results in a multidimensional dictionary
     weight_2_gen_2_inv_dict = dict( (tuple(rec.keys), rec.value) for rec in output_ra["Results_genInv"] )
-    print(weight_2_gen_2_inv_dict)
-    print(weight_2_gen_2_inv_dict.keys())
+#    print(weight_2_gen_2_inv_dict)
+#    print(weight_2_gen_2_inv_dict.keys())
     #for weight in range(1,7):
     #    for generator in range(1,8):
     #        print("Weight: " + str(weight) + "Generator: " + str(generator) + str(weight_2_gen_2_inv_dict['1']['5']))

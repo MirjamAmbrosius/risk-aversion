@@ -46,14 +46,14 @@ $else
 *** Probability Parameters ***
   prob_co2(S_co2)        "probability for CO2 scenario"                  /low_co2 0.2, medium_co2 0.6, high_co2 0.2/
   prob_dloc(S_dloc)      "probability for demand location scenario"      /north 0.3, base 0.4, south 0.3/
-  prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.3, medium_dlev 0.4, high_dlev 0.3/
+  prob_dlev(S_dlev)      "probability for demand level scenario"         /low_dlev 0.2, medium_dlev 0.6, high_dlev 0.2/
   prob_lcost(S_lcost)    "probability for line investment cost scenario" /low_lcost 0.90, high_lcost 0.10/
 $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" / low_co2 0 , medium_co2 25, high_co2 150 /
-  dem_level(S_dlev)      "factor for different demand levels"               / low_dlev 0.9, medium_dlev 1.0, high_dlev 1.1 /
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" / low_co2 0 , medium_co2 35, high_co2 150 /
+  dem_level(S_dlev)      "factor for different demand levels"               / low_dlev 0.95, medium_dlev 1.0, high_dlev 1.05 /
   L_cost(S_lcost)        "Cost for 0.01 line capacity"                      / low_lcost 150, high_lcost 750 /
 ;
   Table
