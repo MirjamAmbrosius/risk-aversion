@@ -1,7 +1,8 @@
 *** General Sets ***
 
   Sets
-  T    "indices for times"                               / 1 *  400 /
+
+  T    "indices for times"                               / 1 * 400 /
   N    "indices for nodes"                               / 1 *   2 /
   G    "indices for generators"                          / 1 *   8 /
   D(N) "indices for consumers"                           / 1 *   2 /
@@ -21,8 +22,8 @@
   epsilon        elasticity of demand                  /    -0.10 /
   Year           Hours per year                        /  8760    /
   buFixInv       Annuity per 1 MW backup capacity      / 16000    /
-  DSM            Load Shedding costs                   /  3000    /
-  L_step         Capacity steps for lines              /   0.05   /
+*  DSM            Load Shedding costs                   /  3000    /
+  L_step         Capacity steps for lines              /   0.01   /
   ;
 
   Parameters
@@ -52,8 +53,9 @@ $endif
   prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
 
 *** Scenario Assumptions ***
-  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" / low_co2 0 , medium_co2 35, high_co2 150 /
-  dem_level(S_dlev)      "factor for different demand levels"               / low_dlev 0.95, medium_dlev 1.0, high_dlev 1.05 /
+
+  co2Price(S_co2)        "price for CO2 emission allowances (euro per ton)" / low_co2 10 , medium_co2 35, high_co2 150 /
+  dem_level(S_dlev)      "factor for different demand levels"               / low_dlev 0.95, medium_dlev 1.00, high_dlev 1.05 /
   L_cost(S_lcost)        "Cost for 0.01 line capacity"                      / low_lcost 150, high_lcost 750 /
 ;
   Table
