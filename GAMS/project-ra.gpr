@@ -947,16 +947,16 @@ PlaneRownr=-1
 [MRUFILES]
 1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\regulatory_uncertainty\GAMS\Input_2Nodes.gms
 2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\regulatory_uncertainty\GAMS\Results_60_con_1_new.gdx
-3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
-4=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_02.gdx
-5=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_01.gdx
-6=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\parameters_ra.gms
-7=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\output_writer_ra.gms
+3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_02.gdx
+4=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\test_01.gdx
+5=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\parameters_ra.gms
+6=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\output_writer_ra.gms
 
 [OPENWINDOW_1]
 FILE0=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
-FILE1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
-FILE2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\input_ra.gms
+FILE1=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
+FILE2=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\model_ra.gms
+FILE3=C:\Users\ur37eleq\FAU Erlangen-Nuernberg\git\risk-aversion\GAMS\main_ra.gms
 MAXIM=1
 TOP=50
 LEFT=50
