@@ -34,14 +34,15 @@ Sets
 
 Parameter xscale(Weight) determine lower bound for line investment for each weight (*0.05);
 
-xscale('1') = 11 ;
-xscale('2') = 11 ;
-xscale('3') = 11 ;
-xscale('4') = 11 ;
-xscale('5') = 11 ;
-xscale('6') = 11 ;
 
+xscale('1') = 48 ;
+xscale('2') = 49 ;
+xscale('3') = 49 ;
+xscale('4') = 50 ;
+xscale('5') = 51 ;
+xscale('6') = 51 ;
 
+*Results 1Zone        0.01   0.05
 *xscale('1') = 48 ;  #0.48  #0.45
 *xscale('2') = 46 ;  #0.49  #0.50
 *xscale('3') = 46 ;  #0.49  #0.50
@@ -49,6 +50,7 @@ xscale('6') = 11 ;
 *xscale('5') = 46 ;  #0.51  #0.50
 *xscale('6') = 46 ;  #0.51  #0.50
 
+*Results 2Zone      0.01   0.05
 *xscale('1') = 11; #0.11  #0.10
 *xscale('2') = 34; #0.34  #0.35
 *xscale('3') = 22; #0.22  #0.25
