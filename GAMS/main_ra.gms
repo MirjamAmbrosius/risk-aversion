@@ -20,25 +20,27 @@ option  optcr = 0.0001
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones one
+$set no_of_zones two
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
 
 Sets
-         Weight                                  / 1 *  6 /
-         L "indices for power lines"             / 1 *  60 /
-         LineInvest "number of iterations"       / 1 *  1 /
+         Weight                                  / 1 * 6 /
+         L "indices for power lines"             / 1* 60 /
+         LineInvest "number of iterations"       / 1 * 1 /
 ;
+
 
 Parameter xscale(Weight) determine lower bound for line investment for each weight (*0.05);
 
-xscale('1') = 48 ;
-xscale('2') = 48 ;
-xscale('3') = 48 ;
-xscale('4') = 48 ;
-xscale('5') = 48 ;
-xscale('6') = 48 ;
+xscale('1') = 11 ;
+xscale('2') = 11 ;
+xscale('3') = 11 ;
+xscale('4') = 11 ;
+xscale('5') = 11 ;
+xscale('6') = 11 ;
+
 
 *xscale('1') = 48 ;  #0.48  #0.45
 *xscale('2') = 46 ;  #0.49  #0.50
@@ -51,8 +53,11 @@ xscale('6') = 48 ;
 *xscale('2') = 34; #0.34  #0.35
 *xscale('3') = 22; #0.22  #0.25
 *xscale('4') = 8 ; #0.08  #0.10
-*xscale('5') = 9 ; #0.09  #0.10
+*xscale('5') = 9 ; #0.09  #0.1
 *xscale('6') = 8 ; #0.08  #0.10
+
+
+
 
 ***--------------------------------------------------------------------------***
 ***             LOAD DATA AND SETUP FOR LOOP WITH PROBABILITIES              ***
@@ -78,8 +83,8 @@ $include model_ra.gms
 
  Loop(Weight,
 
-  weight_sp = (Weight.val-1)*0.2;
-  weight_rd = (Weight.val-1)*0.2;
+  weight_sp = (Weight.val-1)*0.2-0.01$(Weight.val=6);
+  weight_rd = (Weight.val-1)*0.2-0.01$(Weight.val=6);
 
      Loop(LineInvest,
 
@@ -261,7 +266,7 @@ $offtext
   priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost)$(prob_scen(S_co2,S_dloc,S_dlev,S_lcost) and sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))) = sum((D,T),priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T))/sum((D,T),SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)*periodScale(T));
   expPriceSpot = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost) * priceSpotAvg(S_co2,S_dloc,S_dlev,S_lcost));
   price_Spot_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) $prob_scen(S_co2,S_dloc,S_dlev,S_lcost) = sum(D$(D.Val = GenInZone(G)),  priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost) ) ;
-
+  priceAvgNode(D) = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*(sum(T, priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost)*SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost))/(sum(T,SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)))));
 
 
 ***--------------------------------------------------------------------------***
@@ -273,6 +278,7 @@ $offtext
   Loop_buInv(Weight, LineInvest, B)             = RD_CAP_B(B)  ;
   Loop_lineInv(Weight,LineInvest)               = sum(l, SP_CAP_L(L) ) ;
   Loop_expPriceSpot(Weight,LineInvest)          = expPriceSpot ;
+  Loop_priceAvgNode(Weight, LineInvest, D)      = priceAvgNode(D);
   Loop_wf_rn(Weight)                            = wf_rn;
   Loop_risk_adjustment(Weight)                  = risk_adjustment;
   Loop_welfare_scenario_all(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost)  = wf_sc_all(S_co2,S_dloc,S_dlev,S_lcost);
@@ -338,10 +344,12 @@ $offtext
   Results_welfare_all(Weight)
   Results_totalInv(Weight)
   Results_expPriceSpot(Weight)
+  Results_priceAvgNode(Weight,D)
 *  Results_expConsSurpl(Weight)
   Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost)
   Results_wf_rn(Weight)
   Results_risk_adjustment(Weight)
+  Results_wf_market(Weight)
   Results_exp_rents_cs(Weight,D)
   Results_exp_rents_ps(Weight,G)
   Results_rents_sc_cr(Weight,S_co2,S_dloc,S_dlev,S_lcost)
@@ -368,6 +376,7 @@ $offorder
   Results_welfare_all(Weight)                  = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_welfare_all(Weight,LineInvest) )        ;
   Results_totalInv(Weight)                     = sum(G,Results_genInv(Weight,G)) +  sum(B, Results_buInv(Weight,B));
   Results_expPriceSpot(Weight)                 = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_expPriceSpot(Weight,LineInvest) )        ;
+  Results_priceAvgNode(Weight,D)               = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_priceAvgNode(Weight,LineInvest,D) )        ;
 *  Results_expConsSurpl(Weight)                 = sum(LineInvest$(ord(LineInvest)=maxWelfare(Weight)), Loop_expConsSurpl(Weight,LineInvest) )        ;
   Results_welfare_scenario_all(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_welfare_scenario_all(Weight,LineInvest,S_co2,S_dloc,S_dlev,S_lcost) )        ;
   Results_wf_rn(Weight)                       = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_wf_rn(Weight) );

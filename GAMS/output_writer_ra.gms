@@ -82,7 +82,7 @@ put "Demand Ratio (scenario benchmark):", qPeak("1","base"), " at node 1 and ", 
 put "Demand Ratio (scenario south):", qPeak("1","south"), " at node 1 and ", qPeak("2","south"), " at node 2", "\\" /;
 
 
-
+$ontext
 put "\begin{table}[htb]\caption{Overview}"/;
 put "\begin{tabular}{l|rrrrrrr}" /;
 put "\toprule" /;
@@ -98,6 +98,29 @@ loop(Weight,
          "&", Results_lineInv(Weight),
          "&", Results_expPriceSpot(Weight),
          "&", ((Results_welfare_all(Weight)-Results_welfare_all("1"))/1000),
+         "&", ((Results_risk_adjustment(Weight))/1000),
+
+  "\\" /;
+  );
+put "\bottomrule" /;
+put "\end{tabular}" /;
+put "\end{table}" /;
+put "\clearpage" /;
+$offtext
+
+put "\begin{table}[htb]\caption{Overview}"/;
+put "\begin{tabular}{l|rrrrrrr}" /;
+put "\toprule" /;
+put " weight &  price 1      & price 2   &  $\Delta$ W & $\Delta $W market &  price RA \\" /;
+put "        &   \euro/MWh   & \euro/MWh &         T\euro &  T\euro & T\euro   \\" /;
+put "        &      N        &   S       &      NS        &      NS & NS    \\" /;
+put "\midrule" /;
+loop(Weight,
+  put ((Weight.val-1)*0.2),
+         "&", Results_priceAvgNode(Weight,"1"),
+         "&", Results_priceAvgNode(Weight,"2"),
+         "&", ((Results_welfare_all(Weight)-Results_welfare_all("1"))/1000),
+         "&", ((Results_wf_rn(Weight)-Results_wf_rn("1"))/1000),
          "&", ((Results_risk_adjustment(Weight))/1000),
 
   "\\" /;
