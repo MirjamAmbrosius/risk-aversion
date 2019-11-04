@@ -46,6 +46,8 @@ Parameters
   Loop_costs_sc_rd_l(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "network cost per scenario"
   Loop_costs_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "generation redispatch cost per scenario"
   Loop_costs_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) "bu redispatch cost per scenario"
+  Loop_totalRediCost(Weight, LineInvest)    "expected redi costs"
+  Loop_totalDem(Weight, LineInvest)      "total expected demand"
 
 
   total_generation(S_co2,S_dloc,S_dlev,S_lcost)               "total generation by private firms"
@@ -59,6 +61,10 @@ Parameters
   consumerSurplus(D,S_co2,S_dloc,S_dlev,S_lcost)                "Consumer surplus in scenario s"
   totalConsSurpl(S_co2,S_dloc,S_dlev,S_lcost)                   "total consumer surplus in scenario s"
   expConsSurpl                                  "expected total consumer surplus"
+  totalRediCost                                                "total expected redispatch costs"
+  totalDem                                                      "total expected demand"
+  gen_redi_cost(S_co2,S_dloc,S_dlev,S_lcost)        "k"
+  line_inv_cost(S_lcost)                            "kdfö"
 
 * Risk Aversion
   VAR_RD_FIX        "value at risk redispatch (cutoff point for tale)"

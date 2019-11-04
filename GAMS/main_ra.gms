@@ -26,7 +26,7 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                                  / 1 * 6 /
+         Weight                                  / 1 * 6  /
          L "indices for power lines"             / 1* 60 /
          LineInvest "number of iterations"       / 1 * 1 /
 ;
@@ -34,13 +34,36 @@ Sets
 
 Parameter xscale(Weight) determine lower bound for line investment for each weight (*0.05);
 
-
+*1 zone (lower bounds for line investment)
+* xscale('1') = 8;
+*1 zone fixed line investment
+$ontext
 xscale('1') = 48 ;
 xscale('2') = 49 ;
 xscale('3') = 49 ;
 xscale('4') = 50 ;
 xscale('5') = 51 ;
 xscale('6') = 51 ;
+$offtext
+*1 zone myopic
+*$ontext
+*xscale('1') = 48 ;
+*xscale('2') = 48 ;
+*xscale('3') = 48 ;
+*xscale('4') = 48 ;
+*xscale('5') = 48 ;
+*xscale('6') = 48 ;
+*$offtext
+
+*2 zones
+*$ontext
+xscale('1') = 11 ;
+xscale('2') = 34 ;
+xscale('3') = 22 ;
+xscale('4') = 8 ;
+xscale('5') = 9 ;
+xscale('6') = 8 ;
+*$offtext
 
 *Results 1Zone        0.01   0.05
 *xscale('1') = 48 ;  #0.48  #0.45
@@ -87,6 +110,8 @@ $include model_ra.gms
 
   weight_sp = (Weight.val-1)*0.2-0.01$(Weight.val=6);
   weight_rd = (Weight.val-1)*0.2-0.01$(Weight.val=6);
+* Myopic TSO:
+*  weight_rd = 0;
 
      Loop(LineInvest,
 
@@ -220,12 +245,28 @@ $offtext
         + sum(B, buFixInv * RD_CAP_B(B))
         + sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost));
 
+*Calculate total generation redispatch cost per scenario
+  gen_redi_cost(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
+        sum((G,T), genVarInv(G,S_co2)
+        * (RD_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost)
+        - SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost))
+        * periodScale(T)) * YEAR;
+
+*Calculate total line investment cost per scenario
+  line_inv_cost(S_lcost) = sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost));
+
+*Calculate expected network & backup investment and redispatch costs
+  totalRediCost = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*rediCost(S_co2,S_dloc,S_dlev,S_lcost));
+
+*Calculate total expected demand
+  totalDem = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*(sum((T,D),SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)* periodScale(T)*YEAR)));
+
 *Calculate expected network & backup investment and redispatch costs
 *  totalRediCost                  = sum(S$probability(S), probability(S) * ( sum((G,T), genVarInv(G) * ( RD_GEN_G(S,G,T) - SP_GEN_G(S,G,T) ) * periodScale(T) )
 *                                  + sum((B,T), buVarInv * RD_GEN_B(S,B,T) * periodScale(T) ) )
 *                                  ) * YEAR
 *                                  + sum(B, buFixInv * RD_CAP_B(B))
-*                                  + sum(L$SP_CAP_L(L), lineFixInv(L) ) ;
+*                                  + sum(L$SP_CAP_L(L), lineFixInv(L));
 
 * Welfare after redispatch
 
@@ -288,6 +329,8 @@ $offtext
   Loop_costs_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) = Cost_sc_rd_g(S_co2,S_dloc,S_dlev,S_lcost);
   Loop_costs_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) = Cost_sc_rd_b(S_co2,S_dloc,S_dlev,S_lcost);
   Loop_rents_sc_cr(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost)   = Rent_sc_cr(S_co2,S_dloc,S_dlev,S_lcost);
+  Loop_totalRediCost(Weight, LineInvest) = totalRediCost;
+  Loop_totalDem(Weight, LineInvest) = totalDem;
 
 *** Consumer and Producer Surplus
   Loop_exp_rents_CS(Weight,LineInvest,D) = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
@@ -362,6 +405,8 @@ $offtext
   Results_costs_sc_rd_l(Weight,S_co2,S_dloc,S_dlev,S_lcost)
   Results_costs_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost)
   Results_costs_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost)
+  Results_totalRediCost(Weight)
+  Results_totalDem(Weight)
   ;
 
 
@@ -393,5 +438,7 @@ $offorder
   Results_costs_sc_rd_l(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_costs_sc_rd_l(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
   Results_costs_sc_rd_g(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_costs_sc_rd_g(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
   Results_costs_sc_rd_b(Weight,S_co2,S_dloc,S_dlev,S_lcost) = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_costs_sc_rd_b(Weight, LineInvest,S_co2,S_dloc,S_dlev,S_lcost) );
+  Results_totalRediCost(Weight)             = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_totalRediCost(Weight,LineInvest) );
+  Results_totalDem(Weight)             = sum(LineInvest$(ord(LineInvest)+xscale(weight)=maxWelfare(Weight)), Loop_totalDem(Weight,LineInvest) );
 
 $include output_writer_ra.gms
