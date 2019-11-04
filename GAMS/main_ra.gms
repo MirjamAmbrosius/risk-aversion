@@ -2,7 +2,7 @@
 ***                             GENERAL OPTIONS                              ***
 ***--------------------------------------------------------------------------***
 
-option  optcr = 0.0001
+option  optcr = 0.0
         limrow = 0,
 *equations listed per block */
         limcol = 0
@@ -62,7 +62,7 @@ xscale('2') = 34 ;
 xscale('3') = 22 ;
 xscale('4') = 8 ;
 xscale('5') = 9 ;
-xscale('6') = 8 ;
+xscale('6') = 9 ;
 *$offtext
 
 *Results 1Zone        0.01   0.05
@@ -127,22 +127,31 @@ $include model_ra.gms
   option clear= ig_sp       ;
   option clear= f_sp        ;
 
+
+
   SOLVE Spotmarket USING QCP MAXIMIZE welfareSpot ;
 
-  SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)   = d_sp.l(D,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
-  SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) = g_sp.l(G,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+*  SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)   = d_sp.l(D,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+*  SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) = g_sp.l(G,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
   SP_CAP_G(G)                               = ig_sp.l(G)                                 ;
-  SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost)  = f_sp.l(L,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+*  SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost)  = f_sp.l(L,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
   SP_CAP_L(L)                               = lineB(L) * lineUB(L)                       ;
 
 
-$ontext
-  option clear= welfareSpot ;
+*$ontext
+* option clear= welfareSpot ;
   option clear= d_sp        ;
   option clear= g_sp        ;
-  option clear= ig_sp       ;
+*  option clear= ig_sp       ;
   option clear= f_sp        ;
-$offtext
+
+ SOLVE Spotmarket_Riskneutral USING QCP MAXIMIZE welfareSpot_rn ;
+*$offtext
+
+  SP_DEM(D,T,S_co2,S_dloc,S_dlev,S_lcost)   = d_sp.l(D,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+  SP_GEN_G(G,T,S_co2,S_dloc,S_dlev,S_lcost) = g_sp.l(G,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+  SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost)  = f_sp.l(L,T,S_co2,S_dloc,S_dlev,S_lcost)    ;
+
 
 ***--------------------------------------------------------------------------***
 ***                         SOLVE REDISPATCH MODEL                           ***

@@ -5,6 +5,7 @@
   Variables
 * Objective Values
   welfareSpot                            "welfare in spot market"
+  welfareSpot_rn                         "welfare in spot market with risk-neutral post-run model"
   costRedispatch                         "cost at redispatch level"
   welfareRedispatch                      "welfare at redispatch level"
 * Spot Market
@@ -67,6 +68,7 @@
                                         - sum(G, genFixInv(G) * ig_sp(G))) =l= eta_sp(S_co2,S_dloc,S_dlev,S_lcost)
                                         ;
 
+
 *** Zonal First Kirchhoffs Law
   Equation ZFKL;
   ZFKL(Z,T,S_co2,S_dloc,S_dlev,S_lcost)$ prob_scen(S_co2,S_dloc,S_dlev,S_lcost)..
@@ -97,6 +99,23 @@
 ***Generation Capacity Limits
   Equation GCLSpot ;
   GCLSpot(G,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost)..  g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost) =l= avail(T,G) * ig_sp(G) ;
+
+
+
+*** Objective function (RISKNEUTRAL)
+  Equation welfSpot_rn;
+  welfSpot_rn..         welfareSpot_rn =e=   sum((S_co2,S_dloc,S_dlev,S_lcost), prob_scen(S_co2,S_dloc,S_dlev,S_lcost)
+                                        *((sum((D,T), periodScale(T)*(consObjA(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost)
+                                        - 0.5 * consObjB(D,T,S_dloc,S_dlev) * d_sp(D,T,S_co2,S_dloc,S_dlev,S_lcost) * d_sp(D,T,s_co2,S_dloc,S_dlev,S_lcost) ))
+                                        - sum((G,T), genVarInv(G,S_co2) * g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost) * periodScale(T) ) )) * Year)
+                                        - sum(G, genFixInv(G) * SP_CAP_G(G) )
+                                        ;
+
+
+***Generation Capacity Limits (RISKNEUTRAL)
+  Equation GCLSpot_rn ;
+  GCLSpot_rn(G,T,S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost)..  g_sp(G,T,S_co2,S_dloc,S_dlev,S_lcost) =l= avail(T,G) * SP_CAP_G(G)  ;
+
 
 ***--------------------------------------------------------------------------***
 ***                     NETWORK- and REDISPATCH LEVEL                        ***
@@ -230,6 +249,15 @@
     MCF3,
     MCF4,
     GCLSpot /;
+
+  Model Spotmarket_Riskneutral
+  / welfspot_rn,
+    ZFKL,
+    MCF1,
+    MCF2,
+    MCF3,
+    MCF4,
+    GCLSpot_rn /;
 
   Model Redispatch
   / welfRed,
