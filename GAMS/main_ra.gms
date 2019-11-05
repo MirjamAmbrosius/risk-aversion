@@ -35,7 +35,15 @@ Sets
 Parameter xscale(Weight) determine lower bound for line investment for each weight (*0.05);
 
 *1 zone (lower bounds for line investment)
-* xscale('1') = 8;
+$ontext
+ xscale('1') = 30;
+ xscale('2') = 30;
+ xscale('3') = 30;
+ xscale('4') = 30;
+ xscale('5') = 30;
+ xscale('6') = 30;
+$offtext
+
 *1 zone fixed line investment
 $ontext
 xscale('1') = 48 ;
@@ -45,17 +53,28 @@ xscale('4') = 50 ;
 xscale('5') = 51 ;
 xscale('6') = 51 ;
 $offtext
-*1 zone myopic
-*$ontext
-*xscale('1') = 48 ;
-*xscale('2') = 48 ;
-*xscale('3') = 48 ;
-*xscale('4') = 48 ;
-*xscale('5') = 48 ;
-*xscale('6') = 48 ;
-*$offtext
 
-*2 zones
+*1 zone risk-neutral TSO without anticipating risk-aversion of priv. firms
+$ontext
+xscale('1') = 48 ;
+xscale('2') = 48 ;
+xscale('3') = 48 ;
+xscale('4') = 48 ;
+xscale('5') = 48 ;
+xscale('6') = 48 ;
+$offtext
+
+*2 zones lower bounds for line investment
+$ontext
+xscale('1') = 5 ;
+xscale('2') = 5 ;
+xscale('3') = 5 ;
+xscale('4') = 5 ;
+xscale('5') = 5 ;
+xscale('6') = 5 ;
+$offtext
+
+*2 zones fixed line investment
 *$ontext
 xscale('1') = 11 ;
 xscale('2') = 34 ;
@@ -64,6 +83,16 @@ xscale('4') = 8 ;
 xscale('5') = 9 ;
 xscale('6') = 9 ;
 *$offtext
+
+*2 zones risk-neutral TSO without anticipating risk-aversion of priv. firms
+$ontext
+xscale('1') = 11 ;
+xscale('2') = 11 ;
+xscale('3') = 11 ;
+xscale('4') = 11 ;
+xscale('5') = 11 ;
+xscale('6') = 11;
+$offtext
 
 *Results 1Zone        0.01   0.05
 *xscale('1') = 48 ;  #0.48  #0.45
@@ -109,9 +138,9 @@ $include model_ra.gms
  Loop(Weight,
 
   weight_sp = (Weight.val-1)*0.2-0.01$(Weight.val=6);
-  weight_rd = (Weight.val-1)*0.2-0.01$(Weight.val=6);
+*  weight_rd = (Weight.val-1)*0.2-0.01$(Weight.val=6);
 * Myopic TSO:
-*  weight_rd = 0;
+  weight_rd = 0;
 
      Loop(LineInvest,
 
@@ -229,7 +258,7 @@ $offtext
   Rent_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)$prob_scen(S_co2,S_dloc,S_dlev,S_lcost) =
          sum((L,T)$lineB(L), YEAR
         * periodScale(T)
-        * abs(SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost) )
+        * abs(SP_FLOW(L,T,S_co2,S_dloc,S_dlev,S_lcost))
         * abs(sum(D$(lineStart(L) =D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))
         - sum(D$(lineEnd(L) = D.val), priceSpot(D,T,S_co2,S_dloc,S_dlev,S_lcost))));
 
@@ -265,7 +294,7 @@ $offtext
   line_inv_cost(S_lcost) = sum(L$SP_CAP_L(L), lineFixInv(L,S_lcost));
 
 *Calculate expected network & backup investment and redispatch costs
-  totalRediCost = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*rediCost(S_co2,S_dloc,S_dlev,S_lcost));
+  totalRediCost = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*(rediCost(S_co2,S_dloc,S_dlev,S_lcost)-Rent_sc_cr(S_co2,S_dloc,S_dlev,S_lcost)));
 
 *Calculate total expected demand
   totalDem = sum((S_co2,S_dloc,S_dlev,S_lcost),prob_scen(S_co2,S_dloc,S_dlev,S_lcost)*(sum((T,D),SP_dem(D,T,S_co2,S_dloc,S_dlev,S_lcost)* periodScale(T)*YEAR)));
