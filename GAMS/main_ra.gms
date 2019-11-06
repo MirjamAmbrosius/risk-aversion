@@ -20,7 +20,7 @@ option  optcr = 0.0
 ***--------------------------------------------------------------------------***
 
 *** Choose number of zones (one, two)
-$set no_of_zones two
+$set no_of_zones one
 *** Choose deterministic or uncertain model (deterministic, uncertain)
 $set mode uncertain
 *deterministic
@@ -28,21 +28,21 @@ $set mode uncertain
 Sets
          Weight                                  / 1 * 6  /
          L "indices for power lines"             / 1* 60 /
-         LineInvest "number of iterations"       / 1 * 1 /
+         LineInvest "number of iterations"       / 1 * 30 /
 ;
 
 
 Parameter xscale(Weight) determine lower bound for line investment for each weight (*0.05);
 
-*1 zone (lower bounds for line investment)
-$ontext
+*1 zone risk-neutral TSO (lower bounds for line investment)
+*$ontext
  xscale('1') = 30;
  xscale('2') = 30;
  xscale('3') = 30;
  xscale('4') = 30;
  xscale('5') = 30;
  xscale('6') = 30;
-$offtext
+*$offtext
 
 *1 zone fixed line investment
 $ontext
@@ -64,7 +64,7 @@ xscale('5') = 48 ;
 xscale('6') = 48 ;
 $offtext
 
-*2 zones lower bounds for line investment
+*2 zones risk neutral TSO (lower bounds for line investment)
 $ontext
 xscale('1') = 5 ;
 xscale('2') = 5 ;
@@ -75,14 +75,14 @@ xscale('6') = 5 ;
 $offtext
 
 *2 zones fixed line investment
-*$ontext
+$ontext
 xscale('1') = 11 ;
 xscale('2') = 34 ;
 xscale('3') = 22 ;
 xscale('4') = 8 ;
 xscale('5') = 9 ;
 xscale('6') = 9 ;
-*$offtext
+$offtext
 
 *2 zones risk-neutral TSO without anticipating risk-aversion of priv. firms
 $ontext
@@ -139,7 +139,7 @@ $include model_ra.gms
 
   weight_sp = (Weight.val-1)*0.2-0.01$(Weight.val=6);
 *  weight_rd = (Weight.val-1)*0.2-0.01$(Weight.val=6);
-* Myopic TSO:
+* Risk neutral TSO:
   weight_rd = 0;
 
      Loop(LineInvest,

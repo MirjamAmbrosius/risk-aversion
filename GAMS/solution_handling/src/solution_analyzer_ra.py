@@ -15,7 +15,7 @@ if __name__ == "__main__":
     else:
         ws = GamsWorkspace()
     # add a new GamsDatabase and initialize it from the GDX file
-    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/one_Zone_0410_l001_w99.gdx")
+    output_ra = ws.add_database_from_gdx("C:/Users/ba62very/MyGit/RA_neu/risk-aversion/GAMS/main_ra_2Zones.gdx")
 
     # get number of zones
     node_to_zone_dict = dict( (rec.keys[0], rec.value) for rec in output_ra["NodeInZone"] )
