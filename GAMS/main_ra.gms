@@ -26,9 +26,9 @@ $set mode uncertain
 *deterministic
 
 Sets
-         Weight                                  / 1 * 6  /
+         Weight                                  / 1   /
          L "indices for power lines"             / 1* 60 /
-         LineInvest "number of iterations"       / 1 * 30 /
+         LineInvest "number of iterations"       / 1 * 2 /
 ;
 
 
@@ -36,12 +36,11 @@ Parameter xscale(Weight) determine lower bound for line investment for each weig
 
 *1 zone risk-neutral TSO (lower bounds for line investment)
 *$ontext
- xscale('1') = 30;
- xscale('2') = 30;
- xscale('3') = 30;
- xscale('4') = 30;
- xscale('5') = 30;
- xscale('6') = 30;
+* xscale('1') = 48;
+* xscale('2') = 48;
+* xscale('3') = 48;
+* xscale('4') = 49;
+* xscale('6') = 50;
 *$offtext
 
 *1 zone fixed line investment
