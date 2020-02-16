@@ -111,17 +111,18 @@ $offtext
 put "\begin{table}[htb]\caption{Overview}"/;
 put "\begin{tabular}{l|rrrrrrrr}" /;
 put "\toprule" /;
-put " weight &  price 1      & price 2   & networkFee &  $\Delta$ W & $\Delta $W inv & expRediCost \\" /;
-put "        &   \euro/MWh   & \euro/MWh &  \euro/MWh &         T\euro &  T\euro & T\euro   \\" /;
+put " weight &  price 1      & price 2   & avg pric   &  networkFee & pcorr       &  $\Delta$ W & $\Delta $W inv  \\" /;
+put "        &   \euro/MWh   & \euro/MWh &  \euro/MWh & \euro/MWh   &  \euro/MWh  &     T\euro  &  T\euro  \\" /;
 put "\midrule" /;
 loop(Weight,
   put ((Weight.val-1)*0.2),
          "&", Results_priceAvgNode(Weight,"1"),
          "&", Results_priceAvgNode(Weight,"2"),
+         "&", Results_expPriceSpot(Weight),
          "&", (Results_totalRediCost(Weight)/Results_totalDem(Weight)),
+         "&", (Results_expPriceSpot(Weight) + Results_totalRediCost(Weight)/Results_totalDem(Weight)),
          "&", ((Results_welfare_all(Weight)-Results_welfare_all("1"))/1000),
          "&", ((Results_wf_rn(Weight)-Results_wf_rn("1"))/1000),
-         "&", ((Results_totalRediCost(Weight))/1000),
 
   "\\" /;
   );
